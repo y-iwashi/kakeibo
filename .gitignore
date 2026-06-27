@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# Oracle DB Wallet
+kakeibo-backend/kakeibo/wallet/
+kakeibo-backend/db.sqlite3
+
+# Django静的ファイル
+kakeibo-backend/static/
+
+# Logs
+*.log
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
