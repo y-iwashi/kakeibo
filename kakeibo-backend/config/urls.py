@@ -23,7 +23,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from kakeibo.views import MemberViewSet, CategoryViewSet, ExpensesViewSet
 from django.contrib.auth import views as auth_views
-
+from django.shortcuts import render
 
 # ルーター（案内板）を作成し、作ったビューを登録していく
 router = DefaultRouter()
@@ -38,3 +38,10 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('', auth_views.LoginView.as_view(template_name='kakeibo/login.html'), name='login'),
 ]
+
+# 独自の404エラーを返す関数（最低限の情報だけ返す）
+def custom_404_view(request, exception):
+    return render(request, 'kakeibo/404.html', status=404)
+
+# ハンドラーに登録
+handler404 = 'config.urls.custom_404_view'

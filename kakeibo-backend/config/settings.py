@@ -22,8 +22,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-gi5bey_j#6o49+l(2d-)126nam^qtwt4b^z=t$sb(a$ig-d9zi'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# セキュリティ警告: 本番環境ではデバッグを有効にした状態で実行しないでください！
+DEBUG = False
 
 # サーバーのパブリックIPアドレスを許可リストに追加します
 ALLOWED_HOSTS = ['132.145.126.81', 'localhost', '127.0.0.1', 'puripurigames.mydns.jp']
