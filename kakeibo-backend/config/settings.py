@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-gi5bey_j#6o49+l(2d-)126nam^qtwt4b^z=t$sb(a$ig-d9zi
 DEBUG = True
 
 # サーバーのパブリックIPアドレスを許可リストに追加します
-ALLOWED_HOSTS = ['132.145.126.81', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['132.145.126.81', 'localhost', '127.0.0.1', 'puripurigames.mydns.jp']
 
 # Application definition
 
@@ -159,4 +159,5 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # 信頼できるオリジン（アクセス元）として、サーバーのIPアドレスを登録
 CSRF_TRUSTED_ORIGINS = [
     'http://132.145.126.81',
+    'http://puripurigames.mydns.jp',
 ]
