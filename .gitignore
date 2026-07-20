@@ -12,6 +12,7 @@ kakeibo-backend/static/
 
 # Logs
 *.log
+kakeibo-backend/nohup.out
 
 node_modules
 dist
