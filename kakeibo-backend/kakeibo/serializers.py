@@ -2,7 +2,7 @@ import datetime
 from rest_framework import serializers
 from .models import Member, Category, Expenses
 
-# 💡 DRFのお節介エラーを根本から黙らせる魔法のクラス
+# DRFのエラーを無視するクラス
 class SafeDateField(serializers.DateField):
     def to_representation(self, value):
         # もし中身が datetime 型だったら、安全に date 型に変換して親に渡す

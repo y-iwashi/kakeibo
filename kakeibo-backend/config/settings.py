@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-gi5bey_j#6o49+l(2d-)126nam^qtwt4b^z=t$sb(a$ig-d9zi'
 
 # セキュリティ警告: 本番環境ではデバッグを有効にした状態で実行しないでください！
-DEBUG = False
+DEBUG = True
 
 # サーバーのパブリックIPアドレスを許可リストに追加します
 ALLOWED_HOSTS = ['132.145.126.81', 'localhost', '127.0.0.1', 'puripurigames.mydns.jp']
@@ -120,11 +120,14 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ja'
 
+# DBにはUTCで保存して、画面表示するときだけJSTに変換する
 TIME_ZONE = 'Asia/Tokyo'
 
+# Djangoアプリ全体で、多言語対応（英語、日本語、その他の言語の切り替え機能）を有効にします(True)
 USE_I18N = True
 
-USE_TZ = True
+# DBにもJST（ローカル時間）のまま保存させたい場合は False にする
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)

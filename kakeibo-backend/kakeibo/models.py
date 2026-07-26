@@ -6,13 +6,12 @@ class Member(models.Model):
     member_name = models.CharField(max_length=50, db_column='MEMBER_NAME', db_comment='メンバー名')
     
     # 共通カラム
-    db_update_date = models.DateField(auto_now=True, db_column='DB_UPDATE_DATE', db_comment='DB更新日時')
+    db_update_date = models.DateTimeField(auto_now=True, db_column='DB_UPDATE_DATE', db_comment='DB更新日時')
     db_update_user = models.CharField(max_length=50, db_column='DB_UPDATE_USER', db_comment='DB更新者')
-    db_insert_date = models.DateField(auto_now_add=True, db_column='DB_INSERT_DATE', db_comment='DB登録日時')
+    db_insert_date = models.DateTimeField(auto_now_add=True, db_column='DB_INSERT_DATE', db_comment='DB登録日時')
     db_insert_user = models.CharField(max_length=50, db_column='DB_INSERT_USER', db_comment='DB登録者')
 
     class Meta:
-        managed = False  # Djangoはテーブルを勝手にいじらないモード
         db_table = 'T_MEMBER'
 
     def __str__(self):
@@ -24,13 +23,12 @@ class Category(models.Model):
     category_name = models.CharField(max_length=50, db_column='CATEGORY_NAME', db_comment='カテゴリ名')
     
     # 共通カラム
-    db_update_date = models.DateField(auto_now=True, db_column='DB_UPDATE_DATE', db_comment='DB更新日時')
+    db_update_date = models.DateTimeField(auto_now=True, db_column='DB_UPDATE_DATE', db_comment='DB更新日時')
     db_update_user = models.CharField(max_length=50, db_column='DB_UPDATE_USER', db_comment='DB更新者')
-    db_insert_date = models.DateField(auto_now_add=True, db_column='DB_INSERT_DATE', db_comment='DB登録日時')
+    db_insert_date = models.DateTimeField(auto_now_add=True, db_column='DB_INSERT_DATE', db_comment='DB登録日時')
     db_insert_user = models.CharField(max_length=50, db_column='DB_INSERT_USER', db_comment='DB登録者')
 
     class Meta:
-        managed = False  # Djangoはテーブルを勝手にいじらないモード
         db_table = 'T_CATEGORY'
 
     def __str__(self):
@@ -52,11 +50,10 @@ class Expenses(models.Model):
     member = models.ForeignKey(Member, on_delete=models.SET_NULL, blank=True, null=True, db_column='MEMBER_ID', db_constraint=False, db_comment='メンバーID')
 
     # 共通カラム
-    db_update_date = models.DateField(auto_now=True, db_column='DB_UPDATE_DATE', db_comment='DB更新日時')
+    db_update_date = models.DateTimeField(auto_now=True, db_column='DB_UPDATE_DATE', db_comment='DB更新日時')
     db_update_user = models.CharField(max_length=50, db_column='DB_UPDATE_USER', db_comment='DB更新者')
-    db_insert_date = models.DateField(auto_now_add=True, db_column='DB_INSERT_DATE', db_comment='DB登録日時')
+    db_insert_date = models.DateTimeField(auto_now_add=True, db_column='DB_INSERT_DATE', db_comment='DB登録日時')
     db_insert_user = models.CharField(max_length=50, db_column='DB_INSERT_USER', db_comment='DB登録者')
 
     class Meta:
-        managed = False  # Djangoはテーブルを勝手にいじらないモード
         db_table = 'T_EXPENSES'
