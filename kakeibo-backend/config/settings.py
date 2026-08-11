@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -177,3 +178,11 @@ CSRF_TRUSTED_ORIGINS = [
 
 # (オプション) JWTなどの認証ヘッダーを含めた通信を許可
 CORS_ALLOW_CREDENTIALS = True
+
+SIMPLE_JWT = {
+    # アクセストークンの期限を 5分 ➔ 1日（または12時間など）に変更
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    # リフレッシュトークンの期限を 7日に設定
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+}
