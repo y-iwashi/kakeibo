@@ -30,7 +30,7 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     # ダッシュボードのサマリー情報を取得するエンドポイント
-    path('api/dashboard/summary/', get_dashboard_summary, name='dashboard-summary'),
+    path('api/dashboard/', get_dashboard_summary, name='dashboard'),
 ]
 
 # 独自の404エラーを返す関数（最低限の情報だけ返す）

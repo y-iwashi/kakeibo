@@ -4,7 +4,13 @@ import Menu from './Menu';
 const Dashboard = ({ onLogout, username }) => {
 
   // DBから取得するデータの状態（state）
-  const [totalExpense, setTotalExpense] = useState(null);
+  const [summaryData, setSummaryData] = useState({
+    totalExpense: 0,
+    totalCount: 0,
+    maxExpense: 0,
+    maxExpenseShop: '',
+    sourceFile: '',
+  });
   const [loading, setLoading] = useState(true);
 
   // 画面が表示されたタイミングで1回だけ実行
@@ -13,7 +19,7 @@ const Dashboard = ({ onLogout, username }) => {
       try {
         const token = localStorage.getItem('access_token');
 
-        // console.log("送信トークン:", token); // ★ consoleで null になっていないか確認
+        // console.log("送信トークン:", token);
 
         if (!token) {
           console.error("アクセストークンが存在しません。ログインし直してください。");
@@ -21,8 +27,8 @@ const Dashboard = ({ onLogout, username }) => {
           return;
         }
 
-        // バックエンドAPIへリクエスト（URLは環境に合わせて調整してください）
-        const response = await fetch('/api/dashboard/summary/', {
+        // バックエンドAPIへリクエスト
+        const response = await fetch('/api/dashboard/', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -35,8 +41,15 @@ const Dashboard = ({ onLogout, username }) => {
         }
 
         const data = await response.json();
-        // 例: { total_expense: 513486 } のようなレスポンスを想定
-        setTotalExpense(data.total_expense);
+
+        setSummaryData({
+          totalExpense: data.total_expense,
+          totalCount: data.total_count,
+          maxExpense: data.max_expense,
+          maxExpenseShop: data.max_expense_shop,
+          sourceFile: data.source_file,
+        });
+
       } catch (error) {
         console.error('API Error:', error);
       } finally {
@@ -47,7 +60,7 @@ const Dashboard = ({ onLogout, username }) => {
     fetchDashboardData();
   }, []);
 
-  // 金額を「¥ 513,486」形式に整形する関数
+  // 金額を「¥ 123,456」形式に整形する関数
   const formatCurrency = (amount) => {
     if (amount === null || amount === undefined) return '¥ ---';
     return `¥ ${amount.toLocaleString()}`;
@@ -55,7 +68,7 @@ const Dashboard = ({ onLogout, username }) => {
 
 
   // 添付画像を再現したサマリデータ
-  const summaryData = [
+  const summaryTableData = [
     { label: 'な', total: '¥70,319', perPerson: '—', sbi: '¥266,909' },
     { label: 'ゆ', total: '¥49,986', perPerson: '—', sbi: '¥246,576' },
     { label: '共有', total: '¥206,181', perPerson: '¥103,090', sbi: '—' },
@@ -97,7 +110,7 @@ const Dashboard = ({ onLogout, username }) => {
           <div style={styles.card}>
             <span style={styles.cardLabel}>今月の合計支出</span>
             <div style={styles.cardValue}>
-              {loading ? '読み込み中...' : formatCurrency(totalExpense)}
+              {loading ? '読み込み中...' : formatCurrency(summaryData.totalExpense)}
             </div>
             <span style={styles.cardBadge}>先月比 +14.1%</span>
           </div>
@@ -105,15 +118,19 @@ const Dashboard = ({ onLogout, username }) => {
           {/* 今月のデータ登録件数 */}
           <div style={styles.card}>
             <span style={styles.cardLabel}>今月のデータ登録件数</span>
-            <div style={{ ...styles.cardValue, color: '#38bdf8' }}>142 件</div>
-            <span style={styles.cardSub}>対象: 202608.csv</span>
+            <div style={{ ...styles.cardValue, color: '#38bdf8' }}>
+              {loading ? '読み込み中...' : summaryData.totalCount + " 件"}
+            </div>
+            <span style={styles.cardSub}>対象: {summaryData.sourceFile}</span>
           </div>
 
           {/* 今月の最高金額 */}
           <div style={styles.card}>
             <span style={styles.cardLabel}>今月の最高金額</span>
-            <div style={{ ...styles.cardValue, color: '#f43f5e' }}>¥ 167,000</div>
-            <span style={styles.cardSub}>筆頭項目: 家賃</span>
+            <div style={{ ...styles.cardValue, color: '#f43f5e' }}>
+              {loading ? '読み込み中...' : formatCurrency(summaryData.maxExpense)}
+            </div>
+            <span style={styles.cardSub}>ショップ名: {summaryData.maxExpenseShop}</span>
           </div>
         </div>
 
@@ -137,7 +154,7 @@ const Dashboard = ({ onLogout, username }) => {
                 </tr>
               </thead>
               <tbody>
-                {summaryData.map((row, index) => (
+                {summaryTableData.map((row, index) => (
                   <tr key={index} style={styles.tr}>
                     <td style={styles.tdLabel}>{row.label}</td>
                     <td style={styles.tdRight}>{row.total}</td>

@@ -5,7 +5,7 @@ from .serializers import MemberSerializer, CategorySerializer, ExpensesSerialize
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django.db.models import Sum
+from django.db.models import Sum, Count, Max
 
 class MemberViewSet(viewsets.ModelViewSet):
     """
@@ -35,23 +35,60 @@ class ExpensesViewSet(viewsets.ModelViewSet):
 
 logger = logging.getLogger(__name__)
 
+# ダッシュボードのサマリー情報を取得するビュー
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_dashboard_summary(request):
     
-    logger.info("=== get_dashboard_summary CALL START ===")
+    logger.info("=== ダッシュボード初期表示開始 ===")
     logger.info("User: %s", request.user)
     
     try:
-        # 今月の合計を計算
-        total = Expenses.objects.filter(
-            # TODO ここが実際には今月のデータに絞り込む条件になるように修正する必要があります。
-            source_file = "202608.csv" 
-        ).aggregate(Sum('amount'))['amount__sum'] or 0
 
-        logger.info("Calculated Total: %s", total)
+        # 最新のcsvファイルの名称を取得する（6桁の数字 + .csv）
+        latest_record = (
+            Expenses.objects
+            .filter(source_file__regex=r'^\d{6}\.csv$')
+            .order_by('-source_file')
+            .first()
+        )
+
+        # 最新のファイル名を取得（データが無い場合はフォールバック）
+        source_file = latest_record.source_file if latest_record else "なし"
+
+        logger.info("Source File: %s", source_file)
+
+        # 対象月のデータを取得
+        queryset = Expenses.objects.filter(
+            source_file = source_file
+        )
         
-        return Response({'total_expense': total})
+        # 対象月の合計を計算
+        summary =queryset.aggregate(
+            total_expense = Sum('amount'),
+            total_count = Count('expenses_id'),
+        )
+
+        # 金額が高い順（-amount）に並び替えて最上位の1件を取得
+        max_item = queryset.order_by('-amount').first()
+
+        # データが存在する場合はその値を取得（存在しない場合は初期値）
+        max_expense = max_item.amount if max_item else 0
+        
+        # データが存在する場合はそのショップ名を取得（存在しない場合は「なし」）
+        max_expense_shop = max_item.shop if max_item else 'なし'
+        
+        logger.info("Calculated Total: %s", summary)
+        logger.info("Max Expense Amount: %s", max_expense)
+        logger.info("Max Expense Shop: %s", max_expense_shop)
+
+        return Response({
+            'total_expense': summary['total_expense'] or 0,
+            'total_count': summary['total_count'] or 0,
+            'max_expense': max_expense,
+            'max_expense_shop': max_expense_shop,
+            'source_file': source_file,
+        })
 
     except Exception as e:
         # エラーの内容をターミナルに表示させる
