@@ -186,3 +186,37 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
 }
+
+# nohup.outに出力されるログのフォーマットをカスタマイズする設定
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    # ログの出力フォーマット定義
+    'formatters': {
+        'verbose': {
+            'format': '[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
+    # 出力先（ハンドラー）の設定
+    'handlers': {
+        # 1. ターミナルに出力する設定
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        # 2. debug.log ファイルに出力する設定
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'debug.log'),
+            'formatter': 'verbose',
+        },
+    },
+    # ロガー全体の設定
+    'loggers': {
+        '': {  # ルートロガー（自作アプリ含む全体に適用）
+            'handlers': ['console', 'file'],
+            'level': 'INFO',  # ログレベルの設定(INFO, WARNING, ERROR, CRITICAL)
+        },
+    },
+}

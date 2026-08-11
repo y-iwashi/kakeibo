@@ -39,8 +39,6 @@ logger = logging.getLogger(__name__)
 @permission_classes([IsAuthenticated])
 def get_dashboard_summary(request):
     
-    print("=== get_dashboard_summary CALL START ===")
-    print("User:", request.user)
     logger.info("=== get_dashboard_summary CALL START ===")
     logger.info("User: %s", request.user)
     
@@ -51,13 +49,11 @@ def get_dashboard_summary(request):
             source_file = "202608.csv" 
         ).aggregate(Sum('amount'))['amount__sum'] or 0
 
-        print("Calculated Total:", total)
         logger.info("Calculated Total: %s", total)
         
         return Response({'total_expense': total})
 
     except Exception as e:
         # エラーの内容をターミナルに表示させる
-        print("ERROR IN VIEW:", str(e))
         logger.error("ERROR IN VIEW: %s", str(e))
         raise e
