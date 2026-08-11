@@ -185,13 +185,11 @@ const Dashboard = ({ onLogout, username }) => {
 const styles = {
   container: {
     position: 'relative',
-    minHeight: '100vh',
+    minHeight: '100%',
     backgroundColor: '#0f172a',
     color: '#f8fafc',
-    fontFamily: '"Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif',
     padding: '80px 24px 60px 24px',
     boxSizing: 'border-box',
-    overflowX: 'hidden',
   },
   glowCircle1: {
     position: 'absolute',
