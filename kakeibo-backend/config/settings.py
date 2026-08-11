@@ -37,10 +37,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'kakeibo',  # これを追加した
+    'kakeibo',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware', # CORS対応のミドルウェアを追加
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -146,10 +148,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Django REST Framework のグローバル設定を追加
 REST_FRAMEWORK = {
+
+    # レンダラークラスをJSONに限定する設定を追加
     'DEFAULT_RENDERER_CLASSES': [
         # 画面表示（HTML）をあきらめて、純粋なJSONだけを返すように強制します
         'rest_framework.renderers.JSONRenderer',
-    ]
+    ],
+
+    # JWT認証を使用するための設定を追加
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
 }
 
 # ログイン成功時・ログアウト時のリダイレクト先URL
@@ -163,4 +172,8 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 CSRF_TRUSTED_ORIGINS = [
     'http://132.145.126.81',
     'http://puripurigames.mydns.jp',
+    "http://localhost:5173",  # React
 ]
+
+# (オプション) JWTなどの認証ヘッダーを含めた通信を許可
+CORS_ALLOW_CREDENTIALS = True
