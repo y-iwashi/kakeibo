@@ -2,12 +2,32 @@ import React from 'react';
 import Menu from './Menu';
 
 const Dashboard = ({ onLogout, username }) => {
+  // 添付画像を再現したサマリデータ
+  const summaryData = [
+    { label: 'な', total: '¥70,319', perPerson: '—', sbi: '¥266,909' },
+    { label: 'ゆ', total: '¥49,986', perPerson: '—', sbi: '¥246,576' },
+    { label: '共有', total: '¥206,181', perPerson: '¥103,090', sbi: '—' },
+    { label: '家賃', total: '¥167,000', perPerson: '¥83,500', sbi: '—' },
+    { label: '更新料', total: '¥0', perPerson: '¥0', sbi: '—' },
+    { label: 'WRX', total: '¥20,000', perPerson: '¥10,000', sbi: '—' },
+  ];
+
+  // 月別支出推移のダミーデータ
+  const monthlyTrends = [
+    { month: '3月', amount: 380000, height: '60%' },
+    { month: '4月', amount: 420000, height: '70%' },
+    { month: '5月', amount: 310000, height: '45%' },
+    { month: '6月', amount: 490000, height: '85%' },
+    { month: '7月', amount: 450000, height: '75%' },
+    { month: '8月', amount: 513486, height: '90%' },
+  ];
+
   return (
     <div style={styles.container}>
       {/* ハンバーガーメニュー */}
       <Menu onLogout={onLogout} username={username} />
 
-      {/* 背景のネオンブラー */}
+      {/* 背景ネオンエフェクト */}
       <div style={styles.glowCircle1}></div>
       <div style={styles.glowCircle2}></div>
 
@@ -15,39 +35,91 @@ const Dashboard = ({ onLogout, username }) => {
       <main style={styles.content}>
         <div style={styles.titleArea}>
           <h1 style={styles.heading}>Dashboard</h1>
-          <p style={styles.subheading}>支出データの概要</p>
+          <p style={styles.subheading}>2026年8月度の家計状況サマリ</p>
         </div>
 
-        {/* 概要カード（ダミー表示） */}
+        {/* 1. KPIカードエリア（3項目） */}
         <div style={styles.cardGrid}>
+          {/* 今月の合計支出 */}
           <div style={styles.card}>
             <span style={styles.cardLabel}>今月の合計支出</span>
-            <div style={styles.cardValue}>¥ 128,400</div>
-            <span style={styles.cardBadge}>前月比 -12%</span>
+            <div style={styles.cardValue}>¥ 513,486</div>
+            <span style={styles.cardBadge}>先月比 +14.1%</span>
           </div>
 
+          {/* 今月のデータ登録件数 */}
           <div style={styles.card}>
-            <span style={styles.cardLabel}>データ登録件数</span>
-            <div style={styles.cardValue}>42 件</div>
-            <span style={styles.cardSub}>直近の更新: 今日</span>
+            <span style={styles.cardLabel}>今月のデータ登録件数</span>
+            <div style={{ ...styles.cardValue, color: '#38bdf8' }}>142 件</div>
+            <span style={styles.cardSub}>対象: 202608.csv</span>
           </div>
 
+          {/* 今月の最高金額 */}
           <div style={styles.card}>
-            <span style={styles.cardLabel}>予測カテゴリ</span>
-            <div style={styles.cardValue}>食費・光熱費</div>
-            <span style={styles.cardSub}>主要支出項目</span>
+            <span style={styles.cardLabel}>今月の最高金額</span>
+            <div style={{ ...styles.cardValue, color: '#f43f5e' }}>¥ 167,000</div>
+            <span style={styles.cardSub}>筆頭項目: 家賃</span>
           </div>
         </div>
 
-        {/* メインの分析プレースホルダーカード */}
+        {/* 2. 出費サマリテーブル（添付画像のデザイン再現） */}
         <div style={styles.mainCard}>
-          <h3 style={styles.cardTitle}>月別支出推移（準備中）</h3>
-          <div style={styles.placeholderChart}>
-            <div style={{ ...styles.bar, height: '40%' }}></div>
-            <div style={{ ...styles.bar, height: '65%' }}></div>
-            <div style={{ ...styles.bar, height: '85%' }}></div>
-            <div style={{ ...styles.bar, height: '50%' }}></div>
-            <div style={{ ...styles.bar, height: '75%' }}></div>
+          <div style={styles.summaryHeader}>
+            <h2 style={styles.summaryTitle}>Summary</h2>
+            <p style={styles.summarySub}>
+              対象ファイル：<span style={styles.highlightText}>202608.csv</span> / <span style={styles.highlightText}>確定済みのみ</span>
+            </p>
+          </div>
+
+          <div style={styles.tableWrapper}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.thLeft}></th>
+                  <th style={styles.thRight}>合計</th>
+                  <th style={styles.thRight}>一人当たり</th>
+                  <th style={styles.thRight}>住信SBI振込</th>
+                </tr>
+              </thead>
+              <tbody>
+                {summaryData.map((row, index) => (
+                  <tr key={index} style={styles.tr}>
+                    <td style={styles.tdLabel}>{row.label}</td>
+                    <td style={styles.tdRight}>{row.total}</td>
+                    <td style={styles.tdMutedRight}>{row.perPerson}</td>
+                    <td style={styles.tdRight}>{row.sbi}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* 3. 月別支出推移グラフ */}
+        <div style={{ ...styles.mainCard, marginTop: '24px' }}>
+          <div style={styles.summaryHeader}>
+            <h3 style={styles.cardTitle}>月別支出推移</h3>
+            <span style={styles.cardSub}>直近6ヶ月間の変動</span>
+          </div>
+
+          <div style={styles.chartContainer}>
+            {monthlyTrends.map((item, idx) => (
+              <div key={idx} style={styles.barGroup}>
+                <div style={styles.barValue}>¥{(item.amount / 10000).toFixed(1)}万</div>
+                <div style={styles.barTrack}>
+                  <div
+                    style={{
+                      ...styles.barFill,
+                      height: item.height,
+                      background: idx === monthlyTrends.length - 1
+                        ? 'linear-gradient(to top, #6366f1, #38bdf8)'
+                        : 'rgba(51, 65, 85, 0.8)',
+                    }}
+                  />
+                </div>
+                <span style={styles.barLabel}>{item.month}</span>
+              </div>
+            ))}
           </div>
         </div>
       </main>
@@ -62,47 +134,47 @@ const styles = {
     backgroundColor: '#0f172a',
     color: '#f8fafc',
     fontFamily: '"Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif',
-    padding: '80px 24px 40px 24px',
+    padding: '80px 24px 60px 24px',
     boxSizing: 'border-box',
     overflowX: 'hidden',
   },
   glowCircle1: {
     position: 'absolute',
-    width: '400px',
-    height: '400px',
+    width: '450px',
+    height: '450px',
     background: 'linear-gradient(135deg, #6366f1, #a855f7)',
     borderRadius: '50%',
     top: '-100px',
     right: '-100px',
-    filter: 'blur(120px)',
-    opacity: 0.25,
+    filter: 'blur(140px)',
+    opacity: 0.2,
     pointerEvents: 'none',
   },
   glowCircle2: {
     position: 'absolute',
-    width: '350px',
-    height: '350px',
+    width: '400px',
+    height: '400px',
     background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
     borderRadius: '50%',
     bottom: '-50px',
     left: '-50px',
-    filter: 'blur(120px)',
-    opacity: 0.2,
+    filter: 'blur(140px)',
+    opacity: 0.18,
     pointerEvents: 'none',
   },
   content: {
-    maxWidth: '1100px',
+    maxWidth: '1000px',
     margin: '0 auto',
     position: 'relative',
     zIndex: 2,
   },
   titleArea: {
-    marginBottom: '32px',
+    marginBottom: '28px',
   },
   heading: {
     fontSize: '32px',
     fontWeight: '800',
-    margin: '0 0 8px 0',
+    margin: '0 0 6px 0',
     background: 'linear-gradient(to right, #f8fafc, #94a3b8)',
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
@@ -119,7 +191,7 @@ const styles = {
     marginBottom: '24px',
   },
   card: {
-    padding: '24px',
+    padding: '20px 24px',
     borderRadius: '20px',
     backgroundColor: 'rgba(30, 41, 59, 0.7)',
     border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -127,7 +199,7 @@ const styles = {
     boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
     display: 'flex',
     flexDirection: 'column',
-    gap: '8px',
+    gap: '6px',
   },
   cardLabel: {
     fontSize: '13px',
@@ -137,11 +209,12 @@ const styles = {
   cardValue: {
     fontSize: '28px',
     fontWeight: '800',
-    color: '#38bdf8',
+    color: '#f8fafc',
+    letterSpacing: '-0.5px',
   },
   cardBadge: {
     fontSize: '12px',
-    color: '#34d399',
+    color: '#f43f5e',
     fontWeight: '600',
   },
   cardSub: {
@@ -149,31 +222,128 @@ const styles = {
     color: '#64748b',
   },
   mainCard: {
-    padding: '32px',
+    padding: '28px 32px',
     borderRadius: '24px',
     backgroundColor: 'rgba(30, 41, 59, 0.7)',
     border: '1px solid rgba(255, 255, 255, 0.08)',
     backdropFilter: 'blur(16px)',
     boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
   },
-  cardTitle: {
-    fontSize: '18px',
-    margin: '0 0 24px 0',
+  summaryHeader: {
+    marginBottom: '20px',
+  },
+  summaryTitle: {
+    fontSize: '22px',
+    fontWeight: '700',
+    margin: '0 0 6px 0',
+    color: '#f8fafc',
+  },
+  summarySub: {
+    fontSize: '13px',
+    color: '#94a3b8',
+    margin: 0,
+  },
+  highlightText: {
     color: '#cbd5e1',
   },
-  placeholderChart: {
-    height: '180px',
+  tableWrapper: {
+    overflowX: 'auto',
+  },
+  table: {
+    width: '100%',
+    borderCollapse: 'collapse',
+    marginTop: '8px',
+  },
+  thLeft: {
+    textAlign: 'left',
+    padding: '12px 16px',
+    fontSize: '14px',
+    fontWeight: '700',
+    color: '#f8fafc',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  },
+  thRight: {
+    textAlign: 'right',
+    padding: '12px 16px',
+    fontSize: '14px',
+    fontWeight: '700',
+    color: '#f8fafc',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  },
+  tr: {
+    borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+  },
+  tdLabel: {
+    padding: '14px 16px',
+    fontSize: '15px',
+    fontWeight: '600',
+    color: '#f8fafc',
+    textAlign: 'center',
+    width: '20%',
+  },
+  tdRight: {
+    padding: '14px 16px',
+    fontSize: '15px',
+    fontWeight: '600',
+    color: '#f8fafc',
+    textAlign: 'right',
+  },
+  tdMutedRight: {
+    padding: '14px 16px',
+    fontSize: '15px',
+    fontWeight: '500',
+    color: '#64748b',
+    textAlign: 'right',
+  },
+  cardTitle: {
+    fontSize: '18px',
+    fontWeight: '700',
+    margin: '0 0 4px 0',
+    color: '#f8fafc',
+  },
+  chartContainer: {
     display: 'flex',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    gap: '16px',
-    padding: '0 20px',
+    height: '200px',
+    paddingTop: '20px',
+    gap: '12px',
   },
-  bar: {
+  barGroup: {
     flex: 1,
-    background: 'linear-gradient(to top, #4f46e5, #38bdf8)',
-    borderRadius: '8px 8px 0 0',
-    opacity: 0.8,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    height: '100%',
+    justifyContent: 'flex-end',
+    gap: '8px',
+  },
+  barValue: {
+    fontSize: '11px',
+    color: '#94a3b8',
+    fontWeight: '600',
+  },
+  barTrack: {
+    width: '100%',
+    maxWidth: '40px',
+    height: '140px',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    borderRadius: '8px',
+    display: 'flex',
+    alignItems: 'flex-end',
+    overflow: 'hidden',
+    padding: '2px',
+    boxSizing: 'border-box',
+  },
+  barFill: {
+    width: '100%',
+    borderRadius: '6px',
+    transition: 'height 0.3s ease',
+  },
+  barLabel: {
+    fontSize: '12px',
+    color: '#cbd5e1',
+    fontWeight: '500',
   },
 };
 
