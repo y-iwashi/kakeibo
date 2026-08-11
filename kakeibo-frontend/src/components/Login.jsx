@@ -39,9 +39,11 @@ const Login = ({ onLoginSuccess }) => {
       // JWT トークンを保存
       localStorage.setItem('access_token', data.access);
       localStorage.setItem('refresh_token', data.refresh);
+      localStorage.setItem('username', username);
 
       // ログイン成功を親コンポーネントへ通知
       onLoginSuccess();
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -52,8 +54,8 @@ const Login = ({ onLoginSuccess }) => {
   return (
     <div style={styles.container}>
       {/* 背景のネオンブラー */}
-      {/* <div style={styles.glowCircle1}></div> */}
-      {/* <div style={styles.glowCircle2}></div> */}
+      <div style={styles.glowCircle1}></div>
+      <div style={styles.glowCircle2}></div>
 
       {/* ログインカード */}
       <div style={styles.card}>
