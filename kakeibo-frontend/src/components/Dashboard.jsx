@@ -1,7 +1,59 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Menu from './Menu';
 
 const Dashboard = ({ onLogout, username }) => {
+
+  // DBから取得するデータの状態（state）
+  const [totalExpense, setTotalExpense] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // 画面が表示されたタイミングで1回だけ実行
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+
+        // console.log("送信トークン:", token); // ★ consoleで null になっていないか確認
+
+        if (!token) {
+          console.error("アクセストークンが存在しません。ログインし直してください。");
+          setLoading(false);
+          return;
+        }
+
+        // バックエンドAPIへリクエスト（URLは環境に合わせて調整してください）
+        const response = await fetch('/api/dashboard/summary/', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`, // 認証トークンが必要な場合
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('データの取得に失敗しました');
+        }
+
+        const data = await response.json();
+        // 例: { total_expense: 513486 } のようなレスポンスを想定
+        setTotalExpense(data.total_expense);
+      } catch (error) {
+        console.error('API Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  // 金額を「¥ 513,486」形式に整形する関数
+  const formatCurrency = (amount) => {
+    if (amount === null || amount === undefined) return '¥ ---';
+    return `¥ ${amount.toLocaleString()}`;
+  };
+
+
   // 添付画像を再現したサマリデータ
   const summaryData = [
     { label: 'な', total: '¥70,319', perPerson: '—', sbi: '¥266,909' },
@@ -40,10 +92,13 @@ const Dashboard = ({ onLogout, username }) => {
 
         {/* 1. KPIカードエリア（3項目） */}
         <div style={styles.cardGrid}>
+
           {/* 今月の合計支出 */}
           <div style={styles.card}>
             <span style={styles.cardLabel}>今月の合計支出</span>
-            <div style={styles.cardValue}>¥ 513,486</div>
+            <div style={styles.cardValue}>
+              {loading ? '読み込み中...' : formatCurrency(totalExpense)}
+            </div>
             <span style={styles.cardBadge}>先月比 +14.1%</span>
           </div>
 

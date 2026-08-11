@@ -1,10 +1,16 @@
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from kakeibo.views import MemberViewSet, CategoryViewSet, ExpensesViewSet
 from django.contrib.auth import views as auth_views
 from django.shortcuts import render
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+from kakeibo.views import (
+    MemberViewSet, 
+    CategoryViewSet, 
+    ExpensesViewSet, 
+    get_dashboard_summary,
+)
 
 # ルーター（案内板）を作成し、作ったビューを登録していく
 router = DefaultRouter()
@@ -22,6 +28,9 @@ urlpatterns = [
     # JWT認証用エンドポイント
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    # ダッシュボードのサマリー情報を取得するエンドポイント
+    path('api/dashboard/summary/', get_dashboard_summary, name='dashboard-summary'),
 ]
 
 # 独自の404エラーを返す関数（最低限の情報だけ返す）
