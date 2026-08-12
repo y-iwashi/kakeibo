@@ -6,6 +6,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.db.models import Sum, Count, Max
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 class MemberViewSet(viewsets.ModelViewSet):
     """
@@ -53,41 +55,65 @@ def get_dashboard_summary(request):
             .first()
         )
 
-        # 最新のファイル名を取得（データが無い場合はフォールバック）
-        source_file = latest_record.source_file if latest_record else "なし"
+        # 最新のcsvファイルが存在しない場合は、デフォルト値を返す
+        if not latest_record:
+            return Response({
+                'source_file': 'なし',
+                'total_expense': 0,
+                'total_count': 0,
+                'max_expense': 0,
+                'max_expense_shop': 'なし',
+                'mom_change_rate': None, # データなし
+            })
 
-        logger.info("Source File: %s", source_file)
+        current_file_name = latest_record.source_file  # 例: '202608.csv'
+        
+        logger.info("Source File: %s", current_file_name)
 
-        # 対象月のデータを取得
-        queryset = Expenses.objects.filter(
-            source_file = source_file
+        # 当月データの取得
+        current_qs = Expenses.objects.filter(source_file=current_file_name)
+        current_summary = current_qs.aggregate(
+            total_expense=Sum('amount'),
+            total_count=Count('expenses_id')
         )
-        
-        # 対象月の合計を計算
-        summary =queryset.aggregate(
-            total_expense = Sum('amount'),
-            total_count = Count('expenses_id'),
-        )
+        current_total = current_summary['total_expense'] or 0
 
-        # 金額が高い順（-amount）に並び替えて最上位の1件を取得
-        max_item = queryset.order_by('-amount').first()
+        logger.info("Calculated Total: %s", current_total)
 
-        # データが存在する場合はその値を取得（存在しない場合は初期値）
-        max_expense = max_item.amount if max_item else 0
+        # ファイル名から前月ファイル名を計算
+        yyyymm_str = current_file_name.replace('.csv', '')
+        current_date = datetime.strptime(yyyymm_str, '%Y%m')
         
-        # データが存在する場合はそのショップ名を取得（存在しない場合は「なし」）
-        max_expense_shop = max_item.shop if max_item else 'なし'
-        
-        logger.info("Calculated Total: %s", summary)
-        logger.info("Max Expense Amount: %s", max_expense)
-        logger.info("Max Expense Shop: %s", max_expense_shop)
+        # 1ヶ月前の年月を取得
+        prev_date = current_date - relativedelta(months=1)
+        prev_file_name = f"{prev_date.strftime('%Y%m')}.csv"
+
+        # 前月データの集計
+        prev_total = Expenses.objects.filter(source_file=prev_file_name).aggregate(
+            total_expense=Sum('amount')
+        )['total_expense'] or 0
+
+        # 先月比の計算
+        if prev_total > 0:
+            # ((当月 - 前月) / 前月) * 100
+            mom_change_rate = round(((current_total - prev_total) / prev_total) * 100, 1)
+        else:
+            mom_change_rate = None  # 前月のデータが存在しない・0円の場合は比較不可
+
+        # 当月の最高金額データ
+        max_item = current_qs.order_by('-amount').first()
+
+        logger.info("Max Expense Amount: %s", max_item.amount if max_item else 0)
+        logger.info("Max Expense Shop: %s", max_item.shop if max_item else 'なし')
+        logger.info("Month-over-Month Change Rate: %s", mom_change_rate)
 
         return Response({
-            'total_expense': summary['total_expense'] or 0,
-            'total_count': summary['total_count'] or 0,
-            'max_expense': max_expense,
-            'max_expense_shop': max_expense_shop,
-            'source_file': source_file,
+            'source_file': current_file_name,
+            'total_expense': current_total,
+            'total_count': current_summary['total_count'] or 0,
+            'max_expense': max_item.amount if max_item else 0,
+            'max_expense_shop': max_item.shop if max_item else 'なし',
+            'mom_change_rate': mom_change_rate,
         })
 
     except Exception as e:

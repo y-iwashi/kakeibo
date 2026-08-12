@@ -3,13 +3,14 @@ import Menu from './Menu';
 
 const Dashboard = ({ onLogout, username }) => {
 
-  // DBから取得するデータの状態（state）
+  // DBから取得するデータの状態
   const [summaryData, setSummaryData] = useState({
     totalExpense: 0,
     totalCount: 0,
     maxExpense: 0,
     maxExpenseShop: '',
     sourceFile: '',
+    momChangeRate: null,
   });
   const [loading, setLoading] = useState(true);
 
@@ -42,12 +43,14 @@ const Dashboard = ({ onLogout, username }) => {
 
         const data = await response.json();
 
+        // 取得したデータを状態にセット
         setSummaryData({
           totalExpense: data.total_expense,
           totalCount: data.total_count,
           maxExpense: data.max_expense,
           maxExpenseShop: data.max_expense_shop,
           sourceFile: data.source_file,
+          momChangeRate: data.mom_change_rate,
         });
 
       } catch (error) {
@@ -60,14 +63,33 @@ const Dashboard = ({ onLogout, username }) => {
     fetchDashboardData();
   }, []);
 
-  // 金額を「¥ 123,456」形式に整形する関数
+  // 金額を「¥ 123,456」形式に整形するヘルパー関数
   const formatCurrency = (amount) => {
     if (amount === null || amount === undefined) return '¥ ---';
     return `¥ ${amount.toLocaleString()}`;
   };
 
+  // 先月比バッジの表示用ヘルパー関数
+  const renderMomBadge = (mom_change_rate) => {
+    if (mom_change_rate === null || mom_change_rate === undefined) {
+      return <span style={{ ...styles.cardBadge, color: '#94a3b8' }}>先月比データなし</span>;
+    }
 
-  // 添付画像を再現したサマリデータ
+    const isPositive = mom_change_rate > 0;
+    const isNegative = mom_change_rate < 0;
+
+    // 増加なら赤、減少なら青
+    const badgeColor = isPositive ? '#f43f5e' : isNegative ? '#38bdf8' : '#94a3b8';
+    const prefix = isPositive ? '+' : '';
+
+    return (
+      <span style={{ ...styles.cardBadge, color: badgeColor }}>
+        先月比 {prefix}{mom_change_rate}%
+      </span>
+    );
+  };
+
+  // 添付画像を再現したサマリデータ(仮)
   const summaryTableData = [
     { label: 'な', total: '¥70,319', perPerson: '—', sbi: '¥266,909' },
     { label: 'ゆ', total: '¥49,986', perPerson: '—', sbi: '¥246,576' },
@@ -77,7 +99,7 @@ const Dashboard = ({ onLogout, username }) => {
     { label: 'WRX', total: '¥20,000', perPerson: '¥10,000', sbi: '—' },
   ];
 
-  // 月別支出推移のダミーデータ
+  // 月別支出推移のダミーデータ(仮)
   const monthlyTrends = [
     { month: '3月', amount: 380000, height: '60%' },
     { month: '4月', amount: 420000, height: '70%' },
@@ -103,7 +125,7 @@ const Dashboard = ({ onLogout, username }) => {
           <p style={styles.subheading}>2026年8月度の家計状況サマリ</p>
         </div>
 
-        {/* 1. KPIカードエリア（3項目） */}
+        {/* KPIカードエリア（3項目） */}
         <div style={styles.cardGrid}>
 
           {/* 今月の合計支出 */}
@@ -112,7 +134,7 @@ const Dashboard = ({ onLogout, username }) => {
             <div style={styles.cardValue}>
               {loading ? '読み込み中...' : formatCurrency(summaryData.totalExpense)}
             </div>
-            <span style={styles.cardBadge}>先月比 +14.1%</span>
+            {renderMomBadge(summaryData.momChangeRate)}
           </div>
 
           {/* 今月のデータ登録件数 */}
@@ -134,7 +156,7 @@ const Dashboard = ({ onLogout, username }) => {
           </div>
         </div>
 
-        {/* 2. 出費サマリテーブル（添付画像のデザイン再現） */}
+        {/* 出費サマリテーブル */}
         <div style={styles.mainCard}>
           <div style={styles.summaryHeader}>
             <h2 style={styles.summaryTitle}>Summary</h2>
@@ -167,7 +189,7 @@ const Dashboard = ({ onLogout, username }) => {
           </div>
         </div>
 
-        {/* 3. 月別支出推移グラフ */}
+        {/* 月別支出推移グラフ */}
         <div style={{ ...styles.mainCard, marginTop: '24px' }}>
           <div style={styles.summaryHeader}>
             <h3 style={styles.cardTitle}>月別支出推移</h3>
