@@ -11,6 +11,7 @@ const Dashboard = ({ onLogout, username }) => {
     maxExpenseShop: '',
     sourceFile: '',
     momChangeRate: null,
+    summaryTable: [],
   });
   const [loading, setLoading] = useState(true);
 
@@ -53,6 +54,7 @@ const Dashboard = ({ onLogout, username }) => {
           maxExpenseShop: data.max_expense_shop,
           sourceFile: data.source_file,
           momChangeRate: data.mom_change_rate,
+          summaryTable: data.summary_table || [],
         });
 
       } catch (error) {
@@ -82,7 +84,7 @@ const Dashboard = ({ onLogout, username }) => {
 
     // 増加なら赤、減少なら青
     const badgeColor = isPositive ? '#f43f5e' : isNegative ? '#38bdf8' : '#94a3b8';
-    const prefix = isPositive ? '+' : '';
+    const prefix = isPositive ? '+' : '-';
 
     return (
       <span style={{ ...styles.cardBadge, color: badgeColor }}>
@@ -90,16 +92,6 @@ const Dashboard = ({ onLogout, username }) => {
       </span>
     );
   };
-
-  // 添付画像を再現したサマリデータ(仮)
-  const summaryTableData = [
-    { label: 'な', total: '¥70,319', perPerson: '—', sbi: '¥266,909' },
-    { label: 'ゆ', total: '¥49,986', perPerson: '—', sbi: '¥246,576' },
-    { label: '共有', total: '¥206,181', perPerson: '¥103,090', sbi: '—' },
-    { label: '家賃', total: '¥167,000', perPerson: '¥83,500', sbi: '—' },
-    { label: '更新料', total: '¥0', perPerson: '¥0', sbi: '—' },
-    { label: 'WRX', total: '¥20,000', perPerson: '¥10,000', sbi: '—' },
-  ];
 
   // 月別支出推移のダミーデータ(仮)
   const monthlyTrends = [
@@ -178,14 +170,22 @@ const Dashboard = ({ onLogout, username }) => {
                 </tr>
               </thead>
               <tbody>
-                {summaryTableData.map((row, index) => (
-                  <tr key={index} style={styles.tr}>
-                    <td style={styles.tdLabel}>{row.label}</td>
-                    <td style={styles.tdRight}>{row.total}</td>
-                    <td style={styles.tdMutedRight}>{row.perPerson}</td>
-                    <td style={styles.tdRight}>{row.sbi}</td>
+                {loading ? (
+                  <tr>
+                    <td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>
+                      読み込み中...
+                    </td>
                   </tr>
-                ))}
+                ) : (
+                  (summaryData.summaryTable || []).map((row, index) => (
+                    <tr key={index} style={styles.tr}>
+                      <td style={styles.tdLabel}>{row.label}</td>
+                      <td style={styles.tdRight}>{formatCurrency(row.total)}</td>
+                      <td style={styles.tdMutedRight}>{formatCurrency(row.per_person)}</td>
+                      <td style={styles.tdRight}>{formatCurrency(row.sbi)}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
