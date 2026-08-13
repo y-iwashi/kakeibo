@@ -161,7 +161,7 @@ const Dashboard = ({ onLogout, username }) => {
           <div style={styles.summaryHeader}>
             <h2 style={styles.summaryTitle}>Summary</h2>
             <p style={styles.summarySub}>
-              対象ファイル：<span style={styles.highlightText}>202608.csv</span> / <span style={styles.highlightText}>確定済みのみ</span>
+              対象ファイル：<span style={styles.highlightText}>{summaryData.sourceFile}</span> / <span style={styles.highlightText}>確定済みのみ</span>
             </p>
           </div>
 
