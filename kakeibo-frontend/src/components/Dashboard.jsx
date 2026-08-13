@@ -22,9 +22,11 @@ const Dashboard = ({ onLogout, username }) => {
 
         // console.log("送信トークン:", token);
 
+        // トークンが存在しない場合はログアウト処理を実行
         if (!token) {
           console.error("アクセストークンが存在しません。ログインし直してください。");
           setLoading(false);
+          onLogout();
           return;
         }
 
