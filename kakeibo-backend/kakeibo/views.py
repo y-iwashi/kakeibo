@@ -163,7 +163,36 @@ def get_dashboard_summary(request):
             {'label': 'WRX', 'total': WRX_AMOUNT, 'per_person': wrx_per_person, 'sbi': None},
         ]
 
-        logger.info("Summary Table: %s", summary_table)
+        # logger.info("Summary Table: %s", summary_table)
+
+        # 過去の月別合計金額を抽出するロジック
+        monthly_qs = (
+            Expenses.objects
+            .filter(source_file__regex=r'^\d{6}\.csv$')
+            .values('source_file')
+            .annotate(total_amount=Sum('amount'))
+            .order_by('source_file') # 古い順（例: 202603.csv -> 202608.csv）
+        )
+
+        # logger.info("Monthly QuerySet: %s", list(monthly_qs))
+
+        # 配列フォーマットを作成（直近6ヶ月分に絞り込み）
+        monthly_trends = []
+
+        # 過去13ヶ月分のデータを抽出して整形
+        for item in list(monthly_qs)[-13:]: 
+            filename = item['source_file'] # '202608.csv'
+            month_num = int(filename[4:6])  # '08' -> 8
+            
+            # 定数固定費（家賃等）も含める場合はここで足し合わせます
+            total_with_fixed = (item['total_amount'] or 0) + RENT_AMOUNT + RENEWAL_FEE_AMOUNT + WRX_AMOUNT
+
+            monthly_trends.append({
+                'month': f"{month_num}月",
+                'amount': total_with_fixed
+            })
+
+        # logger.info("Monthly Trends: %s", monthly_trends)
 
         return Response({
             'source_file': current_file_name,
@@ -173,6 +202,7 @@ def get_dashboard_summary(request):
             'max_expense_shop': max_item.shop if max_item else 'なし',
             'mom_change_rate': mom_change_rate,
             'summary_table': summary_table,
+            'monthly_trends': monthly_trends,
         })
 
     except Exception as e:

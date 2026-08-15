@@ -12,6 +12,7 @@ const Dashboard = ({ onLogout, username }) => {
     sourceFile: '',
     momChangeRate: null,
     summaryTable: [],
+    monthlyTrends: [],
   });
   const [loading, setLoading] = useState(true);
 
@@ -55,6 +56,7 @@ const Dashboard = ({ onLogout, username }) => {
           sourceFile: data.source_file,
           momChangeRate: data.mom_change_rate,
           summaryTable: data.summary_table || [],
+          monthlyTrends: data.monthly_trends || [],
         });
 
       } catch (error) {
@@ -93,15 +95,95 @@ const Dashboard = ({ onLogout, username }) => {
     );
   };
 
-  // 月別支出推移のダミーデータ(仮)
-  const monthlyTrends = [
-    { month: '3月', amount: 380000, height: '60%' },
-    { month: '4月', amount: 420000, height: '70%' },
-    { month: '5月', amount: 310000, height: '45%' },
-    { month: '6月', amount: 490000, height: '85%' },
-    { month: '7月', amount: 450000, height: '75%' },
-    { month: '8月', amount: 513486, height: '90%' },
-  ];
+  // 折れ線グラフを描画するヘルパー関数
+  const renderLineChart = (chartData) => {
+    if (!chartData || chartData.length === 0) return null;
+
+    const svgWidth = 600;
+    const svgHeight = 180;
+    const paddingY = 35;
+    const paddingX = 40;
+
+    // データ内の最大金額を取得（0除算防止に|| 1）
+    const maxAmount = Math.max(...chartData.map((d) => d.amount)) || 1;
+
+    // 各データ点の座標（X, Y）を計算
+    const points = chartData.map((item, index) => {
+      const x = paddingX + (index * (svgWidth - paddingX * 2)) / (chartData.length - 1);
+      // Y座標は上が0になるため反転させて計算
+      const y = svgHeight - paddingY - (item.amount / maxAmount) * (svgHeight - paddingY * 2);
+      return { x, y, ...item };
+    });
+
+    // 折れ線のパス命令（M x y L x y ...）を生成
+    const linePathD = points.reduce(
+      (acc, p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`),
+      ''
+    );
+
+    // 面の塗りつぶし用パス命令（底辺まで囲む）
+    const areaPathD = `${linePathD} L ${points[points.length - 1].x} ${svgHeight - paddingY} L ${points[0].x} ${svgHeight - paddingY} Z`;
+
+    return (
+      <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ width: '100%', height: 'auto', overflow: 'visible' }}>
+        <defs>
+          {/* 面のグラデーション */}
+          <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.0" />
+          </linearGradient>
+
+          {/* 線のグラデーション */}
+          <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#9963f1" />
+            <stop offset="100%" stopColor="#38bdf8" />
+          </linearGradient>
+
+          {/* ネオン発光フィルタ */}
+          <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+
+        {/* 背景ガイド線（横の点線） */}
+        <line x1={paddingX} y1={paddingY} x2={svgWidth - paddingX} y2={paddingY} stroke="rgba(255,255,255,0.06)" strokeDasharray="4" />
+        <line x1={paddingX} y1={svgHeight / 2} x2={svgWidth - paddingX} y2={svgHeight / 2} stroke="rgba(255,255,255,0.06)" strokeDasharray="4" />
+
+        {/* 下部の塗りつぶしエリア */}
+        <path d={areaPathD} fill="url(#areaGradient)" />
+
+        {/* 折れ線 */}
+        <path
+          d={linePathD}
+          fill="none"
+          stroke="url(#lineGradient)"
+          strokeWidth="3.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* データポイント（点・テキスト） */}
+        {points.map((p, i) => (
+          <g key={i}>
+            {/* 金額テキスト */}
+            <text x={p.x} y={p.y - 15} fill="#94a3b8" fontSize="9" textAnchor="middle" fontWeight="600">
+              ¥{(p.amount / 10000).toFixed(1)}万
+            </text>
+
+            {/* 発光する円ポイント */}
+            {/* <circle cx={p.x} cy={p.y} r="5" fill="#0f172a" stroke="#38bdf8" strokeWidth="3" filter="url(#glow)" /> */}
+            <circle cx={p.x} cy={p.y} r="3" fill="#2342f3" strokeWidth="1" filter="url(#glow)" />
+
+            {/* 月テキスト */}
+            <text x={p.x} y={svgHeight - 8} fill="#cbd5e1" fontSize="9" textAnchor="middle" fontWeight="600">
+              {p.month}
+            </text>
+          </g>
+        ))}
+      </svg>
+    );
+  };
 
   return (
     <div style={styles.container}>
@@ -195,27 +277,11 @@ const Dashboard = ({ onLogout, username }) => {
         <div style={{ ...styles.mainCard, marginTop: '24px' }}>
           <div style={styles.summaryHeader}>
             <h3 style={styles.cardTitle}>月別支出推移</h3>
-            <span style={styles.cardSub}>直近6ヶ月間の変動</span>
+            <span style={styles.cardSub}>ここ1年の変動傾向</span>
           </div>
 
-          <div style={styles.chartContainer}>
-            {monthlyTrends.map((item, idx) => (
-              <div key={idx} style={styles.barGroup}>
-                <div style={styles.barValue}>¥{(item.amount / 10000).toFixed(1)}万</div>
-                <div style={styles.barTrack}>
-                  <div
-                    style={{
-                      ...styles.barFill,
-                      height: item.height,
-                      background: idx === monthlyTrends.length - 1
-                        ? 'linear-gradient(to top, #6366f1, #38bdf8)'
-                        : 'rgba(51, 65, 85, 0.8)',
-                    }}
-                  />
-                </div>
-                <span style={styles.barLabel}>{item.month}</span>
-              </div>
-            ))}
+          <div style={{ padding: '10px 0 0 0' }}>
+            {renderLineChart(summaryData.monthlyTrends || [])}
           </div>
         </div>
       </main>
@@ -350,7 +416,7 @@ const styles = {
   },
   thLeft: {
     textAlign: 'left',
-    padding: '12px 16px',
+    padding: '10px 1px',
     fontSize: '14px',
     fontWeight: '700',
     color: '#f8fafc',
@@ -358,7 +424,7 @@ const styles = {
   },
   thRight: {
     textAlign: 'right',
-    padding: '12px 16px',
+    padding: '10px 1px',
     fontSize: '14px',
     fontWeight: '700',
     color: '#f8fafc',
@@ -368,7 +434,7 @@ const styles = {
     borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
   },
   tdLabel: {
-    padding: '14px 16px',
+    padding: '10px 1px',
     fontSize: '15px',
     fontWeight: '600',
     color: '#f8fafc',
@@ -376,14 +442,14 @@ const styles = {
     width: '20%',
   },
   tdRight: {
-    padding: '14px 16px',
+    padding: '10px 1px',
     fontSize: '15px',
     fontWeight: '600',
     color: '#f8fafc',
     textAlign: 'right',
   },
   tdMutedRight: {
-    padding: '14px 16px',
+    padding: '10px 1px',
     fontSize: '15px',
     fontWeight: '500',
     color: '#64748b',
