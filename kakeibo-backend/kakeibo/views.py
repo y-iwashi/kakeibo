@@ -184,8 +184,8 @@ def get_dashboard_summary(request):
             filename = item['source_file'] # '202608.csv'
             month_num = int(filename[4:6])  # '08' -> 8
             
-            # 定数固定費（家賃等）も含める場合はここで足し合わせます
-            total_with_fixed = (item['total_amount'] or 0) + RENT_AMOUNT + RENEWAL_FEE_AMOUNT + WRX_AMOUNT
+            # 共有固定費（家賃等）を含める場合はここで計算する
+            total_with_fixed = (item['total_amount'] or 0)
 
             monthly_trends.append({
                 'month': f"{month_num}月",

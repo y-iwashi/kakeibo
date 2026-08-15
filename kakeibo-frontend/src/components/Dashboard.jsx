@@ -280,8 +280,11 @@ const Dashboard = ({ onLogout, username }) => {
             <span style={styles.cardSub}>ここ1年の変動傾向</span>
           </div>
 
-          <div style={{ padding: '10px 0 0 0' }}>
-            {renderLineChart(summaryData.monthlyTrends || [])}
+          {/* スクロール用ラッパーに変更（スマホ表示時は横スクロールが出る） */}
+          <div style={styles.chartWrapper}>
+            <div style={styles.chartInner}>
+              {renderLineChart(summaryData.monthlyTrends || [])}
+            </div>
           </div>
         </div>
       </main>
@@ -380,6 +383,15 @@ const styles = {
   cardSub: {
     fontSize: '12px',
     color: '#64748b',
+  },
+  chartWrapper: {
+    overflowX: 'auto',                 // 横スクロールを許可
+    WebkitOverflowScrolling: 'touch',  // iOSでの慣性スクロールを有効化
+    paddingBottom: '8px',              // スクロールバー表示用の下部余白
+  },
+  chartInner: {
+    minWidth: '600px',                 // スマホ時でも最低600pxの幅を確保
+    width: '100%',                     // PCなどの広い画面では100%に広がります
   },
   mainCard: {
     padding: '28px 32px',
