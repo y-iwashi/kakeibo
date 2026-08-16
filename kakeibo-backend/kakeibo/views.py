@@ -8,6 +8,9 @@ from rest_framework.response import Response
 from django.db.models import Sum, Count, Max
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from rest_framework.views import APIView
+from django.utils import timezone
+from .serializers import ExpensesSerializer
 
 class MemberViewSet(viewsets.ModelViewSet):
     """
@@ -112,8 +115,6 @@ def get_dashboard_summary(request):
         logger.info("Max Expense Shop: %s", max_item.shop if max_item else 'なし')
         logger.info("Month-over-Month Change Rate: %s", mom_change_rate)
 
-
-
         # MEMBER_ID別（1:な, 2:ゆ, 3:共有）の合計を集計
         member_sums = current_qs.values('member_id').annotate(total=Sum('amount'))
 
@@ -209,3 +210,105 @@ def get_dashboard_summary(request):
         # エラーの内容をターミナルに表示させる
         logger.error("ERROR IN VIEW: %s", str(e))
         raise e
+
+# 1. 最新データの取得 API
+@permission_classes([IsAuthenticated])
+class LatestExpensesView(APIView):
+    # permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # DB内で最も最新の source_file (例: 202608.csv) を取得
+        # latest_file = Expenses.objects.values_list('source_file', flat=True).order_by('-source_file').first()
+
+        # DB内で最も最新の source_file (例: 202608.csv) を取得
+        latest_record = (
+            Expenses.objects
+            .filter(source_file__regex=r'^\d{6}\.csv$')
+            .order_by('-source_file')
+            .first()
+        )
+
+        latest_file = latest_record.source_file  # 例: '202608.csv'
+
+        logger.info("Latest Source File: %s", latest_file)
+
+        # 最新ファイルが存在しない場合は、空のリストを返す
+        if not latest_file:
+            return Response({"expenses": [], "source_file": "", "categories": [], "members": []})
+
+        # 最新ファイルの全レコード取得 (ID降順)
+        expenses_qs = Expenses.objects.filter(source_file=latest_file).order_by('-expenses_id')
+
+        logger.info("Number of Expenses Records: %s", expenses_qs.count())
+
+        serializer = ExpensesSerializer(expenses_qs, many=True)
+
+        logger.info("Serialized Expenses Data: %s", serializer.data[:5])  # 最初の5件だけログに出力
+
+        # ドロップダウン用マスタリスト
+        categories = list(Category.objects.values_list('category_name', flat=True)) or [
+            '食品・日用品', '外食', '衣服・美容', 'インターネット', 'その他'
+        ]
+        members = list(Member.objects.values_list('member_name', flat=True)) or ['共有', 'な', 'ゆ']
+
+        return Response({
+            "source_file": latest_file,
+            "expenses": serializer.data,
+            "categories": categories,
+            "members": members,
+        })
+
+
+# 2. 単一行の個別更新 API (PATCH)
+@permission_classes([IsAuthenticated])
+class ExpenseUpdateView(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def patch(self, request, pk):
+        try:
+            expense = Expenses.objects.get(pk=pk)
+        except Expenses.DoesNotExist:
+            return Response({"error": "対象のデータが存在しません"}, status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data.copy()
+
+        # 自動更新用カラムを設定
+        expense.db_update_date = timezone.now()
+        expense.db_update_user = request.user.username if request.user else "system"
+
+        serializer = ExpensesSerializer(expense, data=data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            expense.save() # 更新日・更新ユーザーを保存
+            return Response(serializer.data)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# 3. 一括更新 API (POST)
+@permission_classes([IsAuthenticated])
+class BulkExpenseUpdateView(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        ids = request.data.get('ids', [])
+        if not ids:
+            return Response({"error": "更新対象が指定されていません"}, status=status.HTTP_400_BAD_REQUEST)
+
+        update_fields = {}
+        if 'category' in request.data:
+            update_fields['category'] = request.data['category']
+        if 'member' in request.data:
+            update_fields['member'] = request.data['member']
+        if 'is_closed' in request.data:
+            update_fields['is_closed'] = request.data['is_closed']
+
+        # 自動更新用メタ情報
+        update_fields['db_update_date'] = timezone.now()
+        update_fields['db_update_user'] = request.user.username if request.user else "system"
+
+        # 一括更新実行
+        updated_count = Expenses.objects.filter(id__in=ids).update(**update_fields)
+
+        return Response({"message": f"{updated_count}件を更新しました", "updated_count": updated_count})
