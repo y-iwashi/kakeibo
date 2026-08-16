@@ -26,8 +26,12 @@ const Table = ({ onLogout, username, onNavigate }) => {
   }, []);
 
   const fetchLatestExpenses = async () => {
+
     try {
+
       setLoading(true);
+
+      //API呼び出し
       const token = localStorage.getItem('access_token');
       const response = await fetch('/api/expenses/latest/', {
         headers: {
@@ -43,6 +47,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
       setSourceFile(data.source_file || '');
       if (data.categories) setCategories(data.categories);
       if (data.members) setMembers(data.members);
+
     } catch (error) {
       console.error('Fetch Error:', error);
       showMessage('データの読み込みに失敗しました', 'error');
@@ -104,7 +109,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
   // --- 単一フィールド変更ハンドラー ---
   const handleFieldChange = (id, field, value) => {
     setExpenses((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+      prev.map((item) => (item.expenses_id === id ? { ...item, [field]: value } : item))
     );
     // リアルタイムでサーバーへ同期
     updateExpenseOnServer(id, { [field]: value });
@@ -113,7 +118,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
   // --- チェックボックス操作 ---
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      const allFilteredIds = filteredExpenses.map((item) => item.id);
+      const allFilteredIds = filteredExpenses.map((item) => item.expenses_id);
       setSelectedIds(allFilteredIds);
     } else {
       setSelectedIds([]);
@@ -132,7 +137,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
     if (selectedIds.length === 0) return showMessage('対象の行にチェックを入れてください', 'error');
 
     setExpenses((prev) =>
-      prev.map((item) => (selectedIds.includes(item.id) ? { ...item, category: bulkCategory } : item))
+      prev.map((item) => (selectedIds.includes(item.expenses_id) ? { ...item, category: bulkCategory } : item))
     );
     await bulkUpdateOnServer(selectedIds, { category: bulkCategory });
     showMessage(`${selectedIds.length}件のカテゴリを一括更新しました`, 'success');
@@ -143,7 +148,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
     if (selectedIds.length === 0) return showMessage('対象の行にチェックを入れてください', 'error');
 
     setExpenses((prev) =>
-      prev.map((item) => (selectedIds.includes(item.id) ? { ...item, member: bulkMember } : item))
+      prev.map((item) => (selectedIds.includes(item.expenses_id) ? { ...item, member: bulkMember } : item))
     );
     await bulkUpdateOnServer(selectedIds, { member: bulkMember });
     showMessage(`${selectedIds.length}件のメンバーを一括更新しました`, 'success');
@@ -153,7 +158,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
   const handleBulkConfirm = async () => {
     if (selectedIds.length === 0) return showMessage('対象の行にチェックを入れてください', 'error');
 
-    const selectedItems = expenses.filter((item) => selectedIds.includes(item.id));
+    const selectedItems = expenses.filter((item) => selectedIds.includes(item.expenses_id));
     
     // カテゴリまたはメンバーが未設定の行があるかチェック
     const incompleteItems = selectedItems.filter((item) => !item.category || !item.member);
@@ -163,7 +168,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
     }
 
     setExpenses((prev) =>
-      prev.map((item) => (selectedIds.includes(item.id) ? { ...item, is_closed: true } : item))
+      prev.map((item) => (selectedIds.includes(item.expenses_id) ? { ...item, is_closed: true } : item))
     );
     await bulkUpdateOnServer(selectedIds, { is_closed: true });
     showMessage(`${selectedIds.length}件を確定済みにしました`, 'success');
@@ -172,21 +177,26 @@ const Table = ({ onLogout, username, onNavigate }) => {
 
   // --- 検索・表示絞り込み処理（自動更新） ---
   const filteredExpenses = useMemo(() => {
+
     return expenses.filter((item) => {
+
       // 確定済み表示トグル（showClosed: false のときは未確定のみ表示）
       if (!showClosed && item.is_closed) return false;
 
       // 検索バー絞り込み
       if (!searchQuery.trim()) return true;
+
       const q = searchQuery.toLowerCase();
+
+      // 検索対象フィールド: ID, 日付, 店名, メモ, 金額, カテゴリ, メンバー
       return (
-        String(item.id).toLowerCase().includes(q) ||
-        (item.use_date && item.use_date.toLowerCase().includes(q)) ||
-        (item.shop && item.shop.toLowerCase().includes(q)) ||
-        (item.memo && item.memo.toLowerCase().includes(q)) ||
-        String(item.amount).includes(q) ||
-        (item.category && item.category.toLowerCase().includes(q)) ||
-        (item.member && item.member.toLowerCase().includes(q))
+        String(item.expenses_id ?? '').toLowerCase().includes(q) ||
+        String(item.use_date ?? '').toLowerCase().includes(q) ||
+        String(item.shop ?? '').toLowerCase().includes(q) ||
+        String(item.memo ?? '').toLowerCase().includes(q) ||
+        String(item.amount ?? '').includes(q) ||
+        String(item.category ?? '').toLowerCase().includes(q) ||
+        String(item.member ?? '').toLowerCase().includes(q)
       );
     });
   }, [expenses, searchQuery, showClosed]);
@@ -207,6 +217,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
       <div style={styles.glowCircle2}></div>
 
       <main style={styles.content}>
+
         {/* タイトル領域 */}
         <div style={styles.titleArea}>
           <h1 style={styles.heading}>Table</h1>
@@ -264,7 +275,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
 
             {/* 表示 (確定済み含めるか) トグル */}
             <div style={styles.toggleItem}>
-              <span style={styles.toggleLabel}>表示</span>
+              <span style={styles.toggleLabel}>確定済みも表示</span>
               <label style={styles.switch}>
                 <input
                   type="checkbox"
