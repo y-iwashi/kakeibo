@@ -506,14 +506,13 @@ const Table = ({ onLogout, username, onNavigate }) => {
   );
 };
 
-// スタイル定義（ダーク＆ネオンテーマ統一）
+// スタイル定義
 const styles = {
   container: {
     position: 'relative',
-    minHeight: '100vh',
     backgroundColor: '#0f172a',
     color: '#f8fafc',
-    padding: '35px 24px 60px 24px',
+    padding: '35px 24px 0px 24px',
     boxSizing: 'border-box',
   },
   glowCircle1: {
