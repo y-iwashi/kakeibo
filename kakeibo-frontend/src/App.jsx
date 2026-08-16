@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import Table from './components/Table';
 
 function App() {
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState('');
+  
+  // 表示する画面を管理するステート ('DashBoard' | 'Table')
+  const [currentView, setCurrentView] = useState('DashBoard');
 
   useEffect(() => {
 
@@ -37,14 +41,29 @@ function App() {
     // 状態をリセットしてログイン画面に戻す
     setUsername('');
     setIsLoggedIn(false);
+    setCurrentView('DashBoard'); // ログアウト時に初期画面へ戻す
   };
 
+  if (!isLoggedIn) {
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // currentView に応じて画面コンポーネントを切り替える
   return (
     <div>
-      {isLoggedIn ? (
-        <Dashboard onLogout={handleLogout} username={username} />
-      ) : (
-        <Login onLoginSuccess={handleLoginSuccess} />
+      {currentView === 'DashBoard' && (
+        <Dashboard
+          onLogout={handleLogout}
+          username={username}
+          onNavigate={setCurrentView} // 画面遷移用の関数を渡す
+        />
+      )}
+      {currentView === 'Table' && (
+        <Table
+          onLogout={handleLogout}
+          username={username}
+          onNavigate={setCurrentView} // 画面遷移用の関数を渡す
+        />
       )}
     </div>
   );

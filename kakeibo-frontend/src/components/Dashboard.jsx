@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Menu from './Menu';
 
-const Dashboard = ({ onLogout, username }) => {
+const Dashboard = ({ onLogout, username, onNavigate }) => {
 
   // DBから取得するデータの状態
   const [summaryData, setSummaryData] = useState({
@@ -188,7 +188,12 @@ const Dashboard = ({ onLogout, username }) => {
   return (
     <div style={styles.container}>
       {/* ハンバーガーメニュー */}
-      <Menu onLogout={onLogout} username={username} />
+      <Menu 
+        onLogout={onLogout} 
+        username={username} 
+        onNavigate={onNavigate} 
+        activeView="DashBoard" // この画面名
+      />
 
       {/* 背景ネオンエフェクト */}
       <div style={styles.glowCircle1}></div>
@@ -298,7 +303,7 @@ const styles = {
     minHeight: '100%',
     backgroundColor: '#0f172a',
     color: '#f8fafc',
-    padding: '80px 24px 60px 24px',
+    padding: '35px 24px 60px 24px',
     boxSizing: 'border-box',
   },
   glowCircle1: {

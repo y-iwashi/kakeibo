@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
-const Menu = ({ onLogout, username }) => {
+// 1. props に onNavigate と activeView を追加
+const Menu = ({ onLogout, username, onNavigate, activeView }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleMenu = () => setIsOpen(!isOpen);
@@ -18,7 +19,14 @@ const Menu = ({ onLogout, username }) => {
     { label: 'Prediction' },
   ];
 
-  // ログアウト処理
+  // メニュー項目が押された時の処理
+  const handleNavClick = (label) => {
+    toggleMenu();
+    if (onNavigate) {
+      onNavigate(label); // App.jsx の currentView を更新
+    }
+  };
+
   const handleLogoutClick = () => {
     toggleMenu();
     // トークン類を直接消去
@@ -55,7 +63,16 @@ const Menu = ({ onLogout, username }) => {
         {/* ナビゲーションリンク */}
         <nav style={styles.navGroup}>
           {navItems.map((item, index) => (
-            <button key={index} style={styles.navItem} onClick={toggleMenu}>
+            <button
+              key={index}
+              style={{
+                ...styles.navItem,
+                // 現在アクティブな画面のスタイルを少し明るくハイライト
+                backgroundColor: activeView === item.label ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                color: activeView === item.label ? '#38bdf8' : '#cbd5e1',
+              }}
+              onClick={() => handleNavClick(item.label)} // 変更
+            >
               <span>{item.label}</span>
             </button>
           ))}
