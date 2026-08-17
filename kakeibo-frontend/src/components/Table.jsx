@@ -441,7 +441,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
                       <td style={styles.td}>
                         {isEditMode ? (
                           <select
-                            value={row.category || ''}
+                            value={row.category_detail?.category_name ?? '未選択'}
                             onChange={(e) => handleFieldChange(row.id, 'category', e.target.value)}
                             style={styles.tableSelect}
                           >
@@ -453,7 +453,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
                             ))}
                           </select>
                         ) : (
-                          row.category || '-'
+                          row.category_detail?.category_name ?? '未選択'
                         )}
                       </td>
 
@@ -461,7 +461,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
                       <td style={styles.td}>
                         {isEditMode ? (
                           <select
-                            value={row.member || ''}
+                            value={row.member_detail?.member_name ?? '未選択'}
                             onChange={(e) => handleFieldChange(row.id, 'member', e.target.value)}
                             style={styles.tableSelect}
                           >
@@ -473,7 +473,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
                             ))}
                           </select>
                         ) : (
-                          row.member || '-'
+                          row.member_detail?.member_name ?? '未選択'
                         )}
                       </td>
 
