@@ -174,6 +174,27 @@ const Table = ({ onLogout, username, onNavigate }) => {
     setSelectedIds([]);
   };
 
+  // 日付文字列 ('YYYY-MM-DD') を 'YYYY/MM/DD(日)' 形式に変換し、曜日とスタイルを返す関数
+  const formatDateWithDay = (dateStr) => {
+    if (!dateStr) return { formatted: '-', isWeekend: false };
+
+    // '2026-07-06' などを Date オブジェクトに変換 (時刻補正のためハイフンをスラッシュに置換)
+    const date = new Date(dateStr.replace(/-/g, '/'));
+    if (isNaN(date.getTime())) return { formatted: dateStr, isWeekend: false };
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    const dayOfWeekNames = ['日', '月', '火', '水', '木', '金', '土'];
+    const dayOfWeek = date.getDay(); // 0: 日曜日, 6: 土曜日
+
+    const formatted = `${year}/${month}/${day}(${dayOfWeekNames[dayOfWeek]})`;
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // 土日の判定
+
+    return { formatted, isWeekend };
+  };
+
   // --- 検索・表示絞り込み処理（自動更新） ---
   const filteredExpenses = useMemo(() => {
 
@@ -364,13 +385,13 @@ const Table = ({ onLogout, username, onNavigate }) => {
                       />
                     </th>
                   )}
-                  <th style={{ ...styles.th, width: '70px' }}>ID</th>
-                  <th style={{ ...styles.th, width: '120px' }}>日付</th>
+                  <th style={{ ...styles.th, width: '30px' }}>ID</th>
+                  <th style={{ ...styles.th, width: '97px' }}>日付</th>
                   <th style={styles.th}>店名</th>
                   <th style={styles.th}>メモ</th>
-                  <th style={{ ...styles.th, textAlign: 'right', width: '100px' }}>金額</th>
-                  <th style={{ ...styles.th, width: '150px' }}>カテゴリ</th>
-                  <th style={{ ...styles.th, width: '100px' }}>メンバー</th>
+                  <th style={{ ...styles.th, textAlign: 'right', width: '60px' }}>金額</th>
+                  <th style={{ ...styles.th, width: '135px' }}>カテゴリ</th>
+                  <th style={{ ...styles.th, width: '81px' }}>メンバー</th>
                   <th style={{ ...styles.th, textAlign: 'center', width: '70px' }}>確定</th>
                 </tr>
               </thead>
@@ -413,7 +434,17 @@ const Table = ({ onLogout, username, onNavigate }) => {
                       </td>
 
                       {/* 日付 */}
-                      <td style={styles.td}>{row.use_date}</td>
+                      {/* <td style={styles.td}>{row.use_date}</td> */}
+                      <td style={styles.td}>
+                        {(() => {
+                          const { formatted, isWeekend } = formatDateWithDay(row.use_date);
+                          return (
+                            <span style={{ color: isWeekend ? '#ff8398' : 'inherit' }}>
+                              {formatted}
+                            </span>
+                          );
+                        })()}
+                      </td>
 
                       {/* 店名 */}
                       <td style={{ ...styles.td, fontWeight: '600' }}>{row.shop}</td>
@@ -538,7 +569,7 @@ const styles = {
     pointerEvents: 'none',
   },
   content: {
-    maxWidth: '1200px',
+    maxWidth: '1750px',
     margin: '0 auto',
     position: 'relative',
     zIndex: 2,
@@ -714,7 +745,7 @@ const styles = {
     textAlign: 'left',
   },
   th: {
-    padding: '14px 16px',
+    padding: '10px 10px',
     fontSize: '13px',
     fontWeight: '700',
     color: '#cbd5e1',
@@ -728,13 +759,15 @@ const styles = {
     borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
   },
   td: {
-    padding: '12px 16px',
+    // padding: '12px 16px',
+    padding: '10px 10px',
     fontSize: '14px',
     color: '#f8fafc',
     verticalAlign: 'middle',
   },
   tdRight: {
-    padding: '12px 16px',
+    // padding: '12px 16px',
+    padding: '10px 10px',
     fontSize: '14px',
     color: '#f8fafc',
     textAlign: 'right',
