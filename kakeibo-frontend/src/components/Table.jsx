@@ -4,15 +4,15 @@ import Menu from './Menu';
 const Table = ({ onLogout, username, onNavigate }) => {
   // --- ステート管理 ---
   const [expenses, setExpenses] = useState([]);
-  const [categories, setCategories] = useState(['食品・日用品', '外食', '衣服・美容', 'インターネット', 'その他']);
-  const [members, setMembers] = useState(['共有', 'な', 'ゆ']);
-  const [sourceFile, setSourceFile] = useState('202608.csv');
+  const [categories, setCategories] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [sourceFile, setSourceFile] = useState('202608.csv'); // TODO: 初期値は仮置き。実際にはAPIから取得する
   const [loading, setLoading] = useState(true);
 
   // コントロール用ステート
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [showClosed, setShowClosed] = useState(true); // true: 全件表示, false: 未確定のみ
+  const [searchQuery, setSearchQuery] = useState('');  // 検索バーの入力値
+  const [isEditMode, setIsEditMode] = useState(false); // true: 編集モードON, false: 編集モードOFF
+  const [showClosed, setShowClosed] = useState(true);  // true: 全件表示, false: 未確定のみ
 
   // チェックボックス・一括操作用ステート
   const [selectedIds, setSelectedIds] = useState([]);
@@ -62,10 +62,22 @@ const Table = ({ onLogout, username, onNavigate }) => {
   };
 
   // --- サーバーへの更新API実行 ---
-  const updateExpenseOnServer = async (id, updatedFields) => {
+  const updateExpenseOnServer = async (expenses_id, updatedFields) => {
+    // 調査用ログを追加
+    console.log('--- [単一更新リクエスト開始] ---');
+    console.log('送信対象ID (expenses_id):', expenses_id);
+    console.log('送信データ (updatedFields):', updatedFields);
+    console.log('リクエストURL:', `/api/expenses/${expenses_id}/`);
+
+    // IDが未定義(undefined/null)の場合はログを出して処理中断
+    if (!expenses_id) {
+      console.error('【エラー】expenses_id が undefined または null のためリクエストを中断しました');
+      return;
+    }
+
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`/api/expenses/${id}/`, {
+      const response = await fetch(`/api/expenses/${expenses_id}/`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -73,6 +85,8 @@ const Table = ({ onLogout, username, onNavigate }) => {
         },
         body: JSON.stringify(updatedFields),
       });
+
+      console.log('レスポンスステータス:', response.status);
 
       if (!response.ok) throw new Error('更新に失敗しました');
     } catch (error) {
@@ -85,6 +99,11 @@ const Table = ({ onLogout, username, onNavigate }) => {
 
   // 一括更新用サーバー通信
   const bulkUpdateOnServer = async (ids, updateData) => {
+    // 調査用ログを追加
+    console.log('--- [一括更新リクエスト開始] ---');
+    console.log('送信対象ID配列 (ids):', ids);
+    console.log('送信データ (updateData):', updateData);
+
     try {
       const token = localStorage.getItem('access_token');
       const response = await fetch('/api/expenses/bulk-update/', {
@@ -95,6 +114,8 @@ const Table = ({ onLogout, username, onNavigate }) => {
         },
         body: JSON.stringify({ ids, ...updateData }),
       });
+
+      console.log('一括更新 レスポンスステータス:', response.status);
 
       if (!response.ok) throw new Error('一括更新に失敗しました');
       return true;
@@ -288,7 +309,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
                   checked={isEditMode}
                   onChange={(e) => setIsEditMode(e.target.checked)}
                 />
-                <span style={styles.slider}></span>
+                {/* <span style={styles.slider}></span> */}
               </label>
             </div>
 
@@ -301,16 +322,20 @@ const Table = ({ onLogout, username, onNavigate }) => {
                   checked={showClosed}
                   onChange={(e) => setShowClosed(e.target.checked)}
                 />
-                <span style={styles.slider}></span>
+                {/* <span style={styles.slider}></span> */}
               </label>
             </div>
           </div>
         </div>
 
         {/* 一括操作エリア (編集モードON時のみ表示) */}
-        {isEditMode && (
+        <div style={{
+          ...styles.bulkCardWrapper,
+          maxHeight: isEditMode ? '120px' : '0px',
+          opacity: isEditMode ? 1 : 0,
+          marginBottom: isEditMode ? '15px' : '0px',
+        }}>
           <div style={styles.bulkCard}>
-            <h3 style={styles.bulkTitle}>一括操作</h3>
             <div style={styles.bulkGrid}>
               {/* カテゴリ一括 */}
               <div style={styles.bulkField}>
@@ -322,9 +347,9 @@ const Table = ({ onLogout, username, onNavigate }) => {
                     style={styles.select}
                   >
                     <option value="">カテゴリを選択</option>
-                    {categories.map((cat, i) => (
-                      <option key={i} value={cat}>
-                        {cat}
+                    {categories.map((cat) => (
+                      <option key={cat.category_id} value={cat.category_id}>
+                        {cat.category_name}
                       </option>
                     ))}
                   </select>
@@ -344,9 +369,9 @@ const Table = ({ onLogout, username, onNavigate }) => {
                     style={styles.select}
                   >
                     <option value="">メンバーを選択</option>
-                    {members.map((m, i) => (
-                      <option key={i} value={m}>
-                        {m}
+                    {members.map((m) => (
+                      <option key={m.member_id} value={m.member_id}>
+                        {m.member_name}
                       </option>
                     ))}
                   </select>
@@ -365,11 +390,17 @@ const Table = ({ onLogout, username, onNavigate }) => {
               </div>
             </div>
           </div>
-        )}
+        </div>
 
         {/* テーブルエリア */}
-        <div style={styles.tableCard}>
-          <div style={styles.tableWrapper}>
+        <div style={{
+          ...styles.tableCard,
+          ...(isEditMode ? styles.tableCardEditMode : {})
+        }}>
+          <div style={{
+            ...styles.tableWrapper,
+            maxHeight: isEditMode ? '515px' : '650px',
+          }}>
             <table style={styles.table}>
               <thead>
                 <tr>
@@ -380,7 +411,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
                         onChange={handleSelectAll}
                         checked={
                           filteredExpenses.length > 0 &&
-                          selectedIds.length === filteredExpenses.length
+                          filteredExpenses.every((item) => selectedIds.includes(item.expenses_id))
                         }
                       />
                     </th>
@@ -422,8 +453,8 @@ const Table = ({ onLogout, username, onNavigate }) => {
                         <td style={{ ...styles.td, textAlign: 'center' }}>
                           <input
                             type="checkbox"
-                            checked={selectedIds.includes(row.id)}
-                            onChange={() => handleSelectRow(row.id)}
+                            checked={selectedIds.includes(row.expenses_id)}
+                            onChange={() => handleSelectRow(row.expenses_id)}
                           />
                         </td>
                       )}
@@ -455,7 +486,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
                           <input
                             type="text"
                             value={row.memo || ''}
-                            onChange={(e) => handleFieldChange(row.id, 'memo', e.target.value)}
+                            onChange={(e) => handleFieldChange(row.expenses_id, 'memo', e.target.value)}
                             style={styles.tableInput}
                           />
                         ) : (
@@ -472,14 +503,19 @@ const Table = ({ onLogout, username, onNavigate }) => {
                       <td style={styles.td}>
                         {isEditMode ? (
                           <select
-                            value={row.category_detail?.category_name ?? '未選択'}
-                            onChange={(e) => handleFieldChange(row.id, 'category', e.target.value)}
+                            // 初期値: null の場合は空文字、値があれば ID を指定
+                            value={row.category ?? ''}
+                            onChange={(e) => handleFieldChange(
+                              row.expenses_id, 
+                              'category', 
+                              e.target.value ? Number(e.target.value) : null
+                            )}
                             style={styles.tableSelect}
                           >
                             <option value="">未選択</option>
-                            {categories.map((c, i) => (
-                              <option key={i} value={c}>
-                                {c}
+                            {categories.map((c) => (
+                              <option key={c.category_id} value={c.category_id}>
+                                {c.category_name}
                               </option>
                             ))}
                           </select>
@@ -492,14 +528,18 @@ const Table = ({ onLogout, username, onNavigate }) => {
                       <td style={styles.td}>
                         {isEditMode ? (
                           <select
-                            value={row.member_detail?.member_name ?? '未選択'}
-                            onChange={(e) => handleFieldChange(row.id, 'member', e.target.value)}
+                            value={row.member ?? ''}
+                            onChange={(e) => handleFieldChange(
+                              row.expenses_id, 
+                              'member', 
+                              e.target.value ? Number(e.target.value) : null
+                            )}
                             style={styles.tableSelect}
                           >
                             <option value="">未選択</option>
-                            {members.map((m, i) => (
-                              <option key={i} value={m}>
-                                {m}
+                            {members.map((m) => (
+                              <option key={m.member_id} value={m.member_id}>
+                                {m.member_name}
                               </option>
                             ))}
                           </select>
@@ -569,7 +609,7 @@ const styles = {
     pointerEvents: 'none',
   },
   content: {
-    maxWidth: '1750px',
+    maxWidth: '1300px',
     margin: '0 auto',
     position: 'relative',
     zIndex: 2,
@@ -606,7 +646,7 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: '20px',
-    padding: '16px 20px',
+    padding: '7px 7px',
     borderRadius: '16px',
     backgroundColor: 'rgba(30, 41, 59, 0.7)',
     border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -637,7 +677,7 @@ const styles = {
   toggleItem: {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
+    // gap: '5px',
   },
   toggleLabel: {
     fontSize: '13px',
@@ -651,16 +691,20 @@ const styles = {
     width: '44px',
     height: '24px',
   },
-  slider: {
-    position: 'absolute',
-    cursor: 'pointer',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(51, 65, 85, 0.8)',
-    borderRadius: '24px',
-    transition: '0.3s',
+  // slider: {
+  //   position: 'absolute',
+  //   cursor: 'pointer',
+  //   top: 0,
+  //   left: 0,
+  //   right: 0,
+  //   bottom: 0,
+  //   backgroundColor: 'rgba(51, 65, 85, 0.8)',
+  //   borderRadius: '24px',
+  //   transition: '0.3s',
+  // },
+  bulkCardWrapper: {
+    overflow: 'hidden',
+    transition: 'max-height 0.3s ease-in-out, opacity 0.3s ease-in-out, margin-bottom 0.3s ease-in-out',
   },
   bulkCard: {
     padding: '20px',
@@ -727,6 +771,7 @@ const styles = {
     cursor: 'pointer',
     boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
   },
+  /* テーブルエリア */
   tableCard: {
     borderRadius: '20px',
     backgroundColor: 'rgba(30, 41, 59, 0.7)',
@@ -734,22 +779,30 @@ const styles = {
     backdropFilter: 'blur(16px)',
     boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
     overflow: 'hidden',
+    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+  },
+  /* 編集モード時のテーブル発光スタイル */
+  tableCardEditMode: {
+    border: '1px solid rgba(56, 189, 248, 0.4)',
+    boxShadow: '0 0 25px rgba(56, 189, 248, 0.15), 0 20px 40px rgba(0, 0, 0, 0.3)',
   },
   tableWrapper: {
     overflowX: 'auto',
     maxHeight: '650px',
+    transition: 'max-height 0.3s ease-in-out', // 滑らかに高さを変化させる
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
     textAlign: 'left',
   },
+  /* テーブルヘッダー */
   th: {
     padding: '10px 10px',
     fontSize: '13px',
     fontWeight: '700',
     color: '#cbd5e1',
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    backgroundColor: 'rgb(15, 23, 42)',
     borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
     position: 'sticky',
     top: 0,
@@ -760,14 +813,14 @@ const styles = {
   },
   td: {
     // padding: '12px 16px',
-    padding: '10px 10px',
+    padding: '3px 10px',
     fontSize: '14px',
     color: '#f8fafc',
     verticalAlign: 'middle',
   },
   tdRight: {
     // padding: '12px 16px',
-    padding: '10px 10px',
+    padding: '3px 10px',
     fontSize: '14px',
     color: '#f8fafc',
     textAlign: 'right',
@@ -775,28 +828,30 @@ const styles = {
   },
   tableInput: {
     width: '100%',
-    padding: '6px 10px',
+    padding: '3px 10px',
     borderRadius: '6px',
     backgroundColor: '#0f172a',
     border: '1px solid rgba(255, 255, 255, 0.15)',
     color: '#f8fafc',
     fontSize: '13px',
     boxSizing: 'border-box',
+    height: '28px',
   },
   tableSelect: {
     width: '100%',
-    padding: '6px 10px',
+    padding: '3px 10px',
     borderRadius: '6px',
     backgroundColor: '#0f172a',
     border: '1px solid rgba(255, 255, 255, 0.15)',
     color: '#f8fafc',
     fontSize: '13px',
     boxSizing: 'border-box',
+    height: '28px',
   },
   closedBadge: {
     display: 'inline-block',
-    padding: '2px 8px',
-    borderRadius: '12px',
+    padding: '0px 7px',
+    borderRadius: '8px',
     fontSize: '12px',
     fontWeight: '700',
     border: '1px solid',

@@ -243,19 +243,17 @@ class LatestExpensesView(APIView):
 
         serializer = ExpensesSerializer(expenses_qs, many=True)
 
-        logger.info("Serialized Expenses Data: %s", serializer.data[:5])  # 最初の5件だけログに出力
+        # logger.info("Serialized Expenses Data: %s", serializer.data[:5])  # 最初の5件だけログに出力
 
         # ドロップダウン用マスタリスト
-        categories = list(Category.objects.values_list('category_name', flat=True)) or [
-            '食品・日用品', '外食', '衣服・美容', 'インターネット', 'その他'
-        ]
-        members = list(Member.objects.values_list('member_name', flat=True)) or ['共有', 'な', 'ゆ']
+        categories = list(Category.objects.values('category_id', 'category_name'))
+        members = list(Member.objects.values('member_id', 'member_name'))
 
         return Response({
             "source_file": latest_file,
             "expenses": serializer.data,
-            "categories": categories,
-            "members": members,
+            "categories": categories, # [{'category_id': 10, 'category_name': '娯楽'}, ...]
+            "members": members,       # [{'member_id': 1, 'member_name': 'な'}, ...]
         })
 
 
@@ -268,6 +266,7 @@ class ExpenseUpdateView(APIView):
         try:
             expense = Expenses.objects.get(pk=pk)
         except Expenses.DoesNotExist:
+            logger.warning("Expense not found for ID: %s", pk)
             return Response({"error": "対象のデータが存在しません"}, status=status.HTTP_404_NOT_FOUND)
 
         data = request.data.copy()
@@ -281,8 +280,16 @@ class ExpenseUpdateView(APIView):
         if serializer.is_valid():
             serializer.save()
             expense.save() # 更新日・更新ユーザーを保存
+
+            # 登録・更新されたデータをログ出力
+            updated_instance = Expenses.objects.get(pk=pk)
+            updated_data = ExpensesSerializer(updated_instance).data
+            logger.info("【データ更新成功】 ID: %s | 内容: %s", pk, updated_data)
+
             return Response(serializer.data)
 
+        # バリデーションエラー時のログ出力
+        logger.error("【データ更新失敗】 ID: %s | エラー: %s", pk, serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -294,6 +301,7 @@ class BulkExpenseUpdateView(APIView):
     def post(self, request):
         ids = request.data.get('ids', [])
         if not ids:
+            logger.warning("No IDs provided for bulk update")
             return Response({"error": "更新対象が指定されていません"}, status=status.HTTP_400_BAD_REQUEST)
 
         update_fields = {}
@@ -309,6 +317,8 @@ class BulkExpenseUpdateView(APIView):
         update_fields['db_update_user'] = request.user.username if request.user else "system"
 
         # 一括更新実行
-        updated_count = Expenses.objects.filter(id__in=ids).update(**update_fields)
+        updated_count = Expenses.objects.filter(expenses_id__in=ids).update(**update_fields)
+
+        logger.info("【一括更新成功】 対象ID一覧: %s | 更新パラメータ: %s | 件数: %d件", ids, update_fields, updated_count)
 
         return Response({"message": f"{updated_count}件を更新しました", "updated_count": updated_count})
