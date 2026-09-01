@@ -55,10 +55,11 @@ const Table = ({ onLogout, username, onNavigate }) => {
     }
   };
 
-  // メッセージ表示ヘルパー
+  // メッセージ表示ヘルパー関数
+  // スタイルの定義は「メッセージ・トースト通知」を参照
   const showMessage = (text, type = 'info') => {
     setMessage({ text, type });
-    setTimeout(() => setMessage({ text: '', type: '' }), 4000);
+    setTimeout(() => setMessage({ text: '', type: '' }), 3000); // 3秒後にメッセージを消す
   };
 
   // --- サーバーへの更新API実行 ---
@@ -273,21 +274,25 @@ const Table = ({ onLogout, username, onNavigate }) => {
           </div>
         </div>
 
-        {/* メッセージアラート */}
-        {message.text && (
-          <div
-            style={{
-              ...styles.alert,
-              backgroundColor: message.type === 'error' ? 'rgba(244, 63, 94, 0.2)' : 'rgba(56, 189, 248, 0.2)',
-              borderColor: message.type === 'error' ? '#f43f5e' : '#38bdf8',
-              color: message.type === 'error' ? '#fca5a5' : '#7dd3fc',
-            }}
-          >
-            {message.text}
-          </div>
-        )}
+        {/* メッセージ・トースト通知 (固定位置・オーバーレイ) */}
+        <div
+          style={{
+            ...styles.toast,
+            opacity: message.text ? 1 : 0,
+            transform: message.text ? 'translateY(0) scale(1)' : 'translateY(-20px) scale(0.95)',
+            pointerEvents: message.text ? 'auto' : 'none',
+            backgroundColor: message.type === 'error' ? 'rgba(30, 27, 38, 0.95)' : 'rgba(15, 23, 42, 0.95)',
+            borderColor: message.type === 'error' ? '#f43f5e' : '#38bdf8',
+            color: message.type === 'error' ? '#fca5a5' : '#7dd3fc',
+            boxShadow: message.type === 'error' 
+              ? '0 10px 25px -5px rgba(244, 63, 94, 0.3)' 
+              : '0 10px 25px -5px rgba(56, 189, 248, 0.3)',
+          }}
+        >
+          {message.text}
+        </div>
 
-        {/* コントロールヘッダー (検索バー & トグルスイッチ) */}
+        {/* コントロールヘッダー (検索バー & トグルスイッチ & リロードボタン) */}
         <div style={styles.controlCard}>
           <div style={styles.searchBox}>
             <input
@@ -325,6 +330,18 @@ const Table = ({ onLogout, username, onNavigate }) => {
                 {/* <span style={styles.slider}></span> */}
               </label>
             </div>
+
+            {/* 手動リロードボタン */}
+            <button 
+              onClick={() => {
+                fetchLatestExpenses();
+                showMessage('最新データを取得しました', 'success');
+              }} 
+              style={styles.reloadBtn}
+              title="最新データに更新"
+            >
+              リロード
+            </button>
           </div>
         </div>
 
@@ -633,14 +650,25 @@ const styles = {
     color: '#38bdf8',
     fontWeight: '600',
   },
-  alert: {
-    padding: '12px 16px',
+
+  /* トースト通知 (画面最前面の固定配置) */
+  toast: {
+    position: 'fixed',
+    top: '24px',
+    right: '24px',
+    zIndex: 9999, // テーブルやメニューより手前に表示
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '12px 20px',
     borderRadius: '12px',
     border: '1px solid',
-    marginBottom: '20px',
+    backdropFilter: 'blur(12px)',
     fontSize: '14px',
     fontWeight: '600',
+    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)', // 上から出てくるイージング
   },
+
   controlCard: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -691,17 +719,24 @@ const styles = {
     width: '44px',
     height: '24px',
   },
-  // slider: {
-  //   position: 'absolute',
-  //   cursor: 'pointer',
-  //   top: 0,
-  //   left: 0,
-  //   right: 0,
-  //   bottom: 0,
-  //   backgroundColor: 'rgba(51, 65, 85, 0.8)',
-  //   borderRadius: '24px',
-  //   transition: '0.3s',
-  // },
+
+  /* 最新化ボタン */
+  reloadBtn: {
+    padding: '8px 14px',
+    borderRadius: '10px',
+    backgroundColor: 'rgba(51, 65, 85, 0.8)',
+    border: '1px solid rgba(255, 255, 255, 0.15)',
+    color: '#f8fafc',
+    fontSize: '13px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    transition: 'all 0.2s ease',
+    whiteSpace: 'nowrap',
+  },
+
   bulkCardWrapper: {
     overflow: 'hidden',
     transition: 'max-height 0.3s ease-in-out, opacity 0.3s ease-in-out, margin-bottom 0.3s ease-in-out',
