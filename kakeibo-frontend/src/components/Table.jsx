@@ -13,6 +13,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
   const [searchQuery, setSearchQuery] = useState('');  // 検索バーの入力値
   const [isEditMode, setIsEditMode] = useState(false); // true: 編集モードON, false: 編集モードOFF
   const [showClosed, setShowClosed] = useState(true);  // true: 全件表示, false: 未確定のみ
+  const [hideConfigured, setHideConfigured] = useState(true); // デフォルトON: カテゴリ・メンバー選択済みを非表示
 
   // チェックボックス・一括操作用ステート
   const [selectedIds, setSelectedIds] = useState([]);
@@ -225,6 +226,9 @@ const Table = ({ onLogout, username, onNavigate }) => {
       // 確定済み表示トグル（showClosed: false のときは未確定のみ表示）
       if (!showClosed && item.is_closed) return false;
 
+      // カテゴリ・メンバー選択済みのデータを非表示（hideConfigured: true のとき）
+      if (hideConfigured && item.category && item.member) return false;
+
       // 検索バー絞り込み
       if (!searchQuery.trim()) return true;
 
@@ -241,7 +245,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
         String(item.member ?? '').toLowerCase().includes(q)
       );
     });
-  }, [expenses, searchQuery, showClosed]);
+  }, [expenses, searchQuery, showClosed, hideConfigured]);
 
   return (
     <div style={styles.container}>
@@ -255,8 +259,8 @@ const Table = ({ onLogout, username, onNavigate }) => {
       />
 
       {/* 背景ネオンエフェクト */}
-      <div style={styles.glowCircle1}></div>
-      <div style={styles.glowCircle2}></div>
+      {/* <div style={styles.glowCircle1}></div> */}
+      {/* <div style={styles.glowCircle2}></div> */}
 
       <main style={styles.content}>
         {/* タイトル領域 */}
@@ -314,7 +318,6 @@ const Table = ({ onLogout, username, onNavigate }) => {
                   checked={isEditMode}
                   onChange={(e) => setIsEditMode(e.target.checked)}
                 />
-                {/* <span style={styles.slider}></span> */}
               </label>
             </div>
 
@@ -327,7 +330,19 @@ const Table = ({ onLogout, username, onNavigate }) => {
                   checked={showClosed}
                   onChange={(e) => setShowClosed(e.target.checked)}
                 />
-                {/* <span style={styles.slider}></span> */}
+              </label>
+            </div>
+
+            {/* カテゴリ・メンバー入力済み非表示トグル */}
+            <div style={styles.toggleItem}>
+              <span style={styles.toggleLabel}>入力済みを隠す</span>
+              <label style={styles.switch}>
+                <input
+                  type="checkbox"
+                  checked={hideConfigured}
+                  onChange={(e) => setHideConfigured(e.target.checked)}
+                />
+                <span style={styles.slider}></span>
               </label>
             </div>
 
@@ -601,30 +616,30 @@ const styles = {
     padding: '35px 24px 0px 24px',
     boxSizing: 'border-box',
   },
-  glowCircle1: {
-    position: 'absolute',
-    width: '450px',
-    height: '450px',
-    background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-    borderRadius: '50%',
-    top: '-100px',
-    right: '-100px',
-    filter: 'blur(140px)',
-    opacity: 0.15,
-    pointerEvents: 'none',
-  },
-  glowCircle2: {
-    position: 'absolute',
-    width: '400px',
-    height: '400px',
-    background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
-    borderRadius: '50%',
-    bottom: '-50px',
-    left: '-50px',
-    filter: 'blur(140px)',
-    opacity: 0.15,
-    pointerEvents: 'none',
-  },
+  // glowCircle1: {
+  //   position: 'absolute',
+  //   width: '450px',
+  //   height: '450px',
+  //   background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+  //   borderRadius: '50%',
+  //   top: '-100px',
+  //   right: '-100px',
+  //   filter: 'blur(140px)',
+  //   opacity: 0.15,
+  //   pointerEvents: 'none',
+  // },
+  // glowCircle2: {
+  //   position: 'absolute',
+  //   width: '400px',
+  //   height: '400px',
+  //   background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+  //   borderRadius: '50%',
+  //   bottom: '-50px',
+  //   left: '-50px',
+  //   filter: 'blur(140px)',
+  //   opacity: 0.15,
+  //   pointerEvents: 'none',
+  // },
   content: {
     maxWidth: '1300px',
     margin: '0 auto',
