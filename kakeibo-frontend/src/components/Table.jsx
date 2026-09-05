@@ -21,6 +21,9 @@ const Table = ({ onLogout, username, onNavigate }) => {
   const [bulkMember, setBulkMember] = useState('');
   const [message, setMessage] = useState({ text: '', type: '' }); // アラートメッセージ
 
+  // ソート状態の管理 ({ key: カラム名, direction: 'asc' | 'desc' })
+  const [sortConfig, setSortConfig] = useState({ key: 'use_date', direction: 'desc' });
+
   // APIから最新データとマスタデータを取得
   useEffect(() => {
     fetchLatestExpenses();
@@ -247,6 +250,44 @@ const Table = ({ onLogout, username, onNavigate }) => {
     });
   }, [expenses, searchQuery, showClosed, hideConfigured]);
 
+  // フィルタ済みのデータをソート (filteredExpenses を対象に修正)
+  const sortedExpenses = useMemo(() => {
+    if (!filteredExpenses) return [];
+    
+    return [...filteredExpenses].sort((a, b) => {
+      let aValue = a[sortConfig.key] ?? '';
+      let bValue = b[sortConfig.key] ?? '';
+
+      // 数値比較の場合 (ID, 金額)
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+
+      // 文字列・日付比較の場合
+      aValue = aValue.toString();
+      bValue = bValue.toString();
+
+      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filteredExpenses, sortConfig]); // 依存配列に filteredExpenses を指定
+
+  // ソート切り替えハンドラー
+  const handleSort = (columnKey) => {
+    let direction = 'asc';
+    if (sortConfig.key === columnKey && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key: columnKey, direction });
+  };
+
+  // ソート方向を示すアイコン表示用
+  const getSortIcon = (columnKey) => {
+    if (sortConfig.key !== columnKey) return ' ↕';
+    return sortConfig.direction === 'asc' ? ' ▲' : ' ▼';
+  };
+
   return (
     <div style={styles.container}>
 
@@ -442,17 +483,21 @@ const Table = ({ onLogout, username, onNavigate }) => {
                         type="checkbox"
                         onChange={handleSelectAll}
                         checked={
-                          filteredExpenses.length > 0 &&
-                          filteredExpenses.every((item) => selectedIds.includes(item.expenses_id))
+                          sortedExpenses.length > 0 &&
+                          sortedExpenses.every((item) => selectedIds.includes(item.expenses_id))
                         }
                       />
                     </th>
                   )}
                   <th style={{ ...styles.th, width: '30px' }}>ID</th>
-                  <th style={{ ...styles.th, width: '97px' }}>日付</th>
+                  <th style={{ ...styles.th, width: '97px' }} onClick={() => handleSort('use_date')}>
+                    日付{getSortIcon('use_date')}
+                  </th>
                   <th style={styles.th}>店名</th>
                   <th style={styles.th}>メモ</th>
-                  <th style={{ ...styles.th, textAlign: 'right', width: '60px' }}>金額</th>
+                  <th style={{ ...styles.th, textAlign: 'right', width: '60px' }} onClick={() => handleSort('amount')}>
+                    金額{getSortIcon('amount')}
+                  </th>
                   <th style={{ ...styles.th, width: '135px' }}>カテゴリ</th>
                   <th style={{ ...styles.th, width: '81px' }}>メンバー</th>
                   <th style={{ ...styles.th, textAlign: 'center', width: '70px' }}>確定</th>
@@ -468,7 +513,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
                       読み込み中...
                     </td>
                   </tr>
-                ) : filteredExpenses.length === 0 ? (
+                ) : sortedExpenses.length === 0 ? (
                   <tr>
                     <td
                       colSpan={isEditMode ? 9 : 8}
@@ -478,8 +523,9 @@ const Table = ({ onLogout, username, onNavigate }) => {
                     </td>
                   </tr>
                 ) : (
-                  filteredExpenses.map((row) => (
+                  sortedExpenses.map((row) => (
                     <tr key={row.id} style={styles.tr}>
+
                       {/* チェックボックス */}
                       {isEditMode && (
                         <td style={{ ...styles.td, textAlign: 'center' }}>
