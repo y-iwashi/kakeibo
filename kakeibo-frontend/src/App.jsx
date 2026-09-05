@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import CsvImport from './components/CsvImport';
 import Table from './components/Table';
 
 function App() {
@@ -58,6 +59,13 @@ function App() {
           onNavigate={setCurrentView} // 画面遷移用の関数を渡す
         />
       )}
+
+      {currentView === 'Import' && (
+        <CsvImport 
+          onNavigate={setCurrentView} // 画面遷移用の関数を渡す
+        />
+      )}
+
       {currentView === 'Table' && (
         <Table
           onLogout={handleLogout}

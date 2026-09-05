@@ -1,4 +1,6 @@
 import logging
+import csv
+import io
 from rest_framework import viewsets
 from .models import Member, Category, Expenses
 from .serializers import MemberSerializer, CategorySerializer, ExpensesSerializer
@@ -11,6 +13,8 @@ from dateutil.relativedelta import relativedelta
 from rest_framework.views import APIView
 from django.utils import timezone
 from .serializers import ExpensesSerializer
+from rest_framework import status
+from .models import Expenses
 
 class MemberViewSet(viewsets.ModelViewSet):
     """
@@ -322,3 +326,86 @@ class BulkExpenseUpdateView(APIView):
         logger.info("【一括更新成功】 対象ID一覧: %s | 更新パラメータ: %s | 件数: %d件", ids, update_fields, updated_count)
 
         return Response({"message": f"{updated_count}件を更新しました", "updated_count": updated_count})
+
+# 4. CSVインポート API
+class ExpenseImportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        file_obj = request.FILES.get('file')
+        if not file_obj:
+            return Response({'error': 'ファイルが添付されていません'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Shift-JIS (または UTF-8) で読み込み
+            file_data = file_obj.read()
+            try:
+                decoded_file = file_data.decode('cp932')
+            except UnicodeDecodeError:
+                decoded_file = file_data.decode('utf-8')
+
+            io_string = io.StringIO(decoded_file)
+            reader = csv.reader(io_string)
+
+            new_expenses = []
+            source_file_name = file_obj.name
+
+            for row in reader:
+                # 空行スキップ
+                if not row or len(row) < 3:
+                    continue
+
+                # 1行目がヘッダー/会員情報の場合はスキップ (日付形式 YYYY/MM/DD で判別)
+                use_date_str = row[0].strip()
+                if not (len(use_date_str) == 10 and '/' in use_date_str):
+                    continue
+
+                # 日付フォーマット変換 (YYYY/MM/DD -> YYYY-MM-DD)
+                formatted_date = use_date_str.replace('/', '-')
+
+                shop = row[1].strip() # 利用店名・商品名
+                amount = int(row[2].replace(',', '').strip()) # 金額 (カンマ除去して整数化)
+                memo = row[6].strip() if len(row) > 6 else '' # メモ
+
+                # DBインサート用インスタンスの作成
+                new_expenses.append(
+                    Expenses(
+                        use_date=formatted_date,
+                        shop=shop,
+                        amount=amount,
+                        memo=memo,
+                        is_closed=False,
+                        source_file=source_file_name,
+                        db_insert_date=timezone.now(),
+                        db_insert_user=request.user.username if request.user else "system",
+                        db_update_date=timezone.now(),
+                        db_update_user=request.user.username if request.user else "system",
+                    )
+                )
+
+                # 現在のテーブル内の EXPENSES_ID の最大値を取得
+                max_id = Expenses.objects.aggregate(Max('expenses_id'))['expenses_id__max'] or 0
+
+                # logger.info("Current Max EXPENSES_ID: %s", max_id)
+                
+                # 開始IDを決定 (現在の最大値+1)
+                next_id = max(max_id + 1)
+
+            # インポート対象データに1件ずつ順にIDを割り当てる
+            for item in new_expenses:
+                item.expenses_id = next_id
+                next_id += 1
+
+            # IDがセットされた状態で一括保存
+            Expenses.objects.bulk_create(new_expenses)
+
+            logger.info("【CSVインポート成功】 ファイル名: %s | 件数: %d件", source_file_name, len(new_expenses))
+
+            return Response({
+                'message': f'{len(new_expenses)} 件のデータを正常に取り込みました',
+                'count': len(new_expenses)
+            }, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            logger.error("Import Error: %s", e)
+            return Response({'error': f'CSVの処理中にエラーが発生しました: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

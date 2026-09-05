@@ -6,7 +6,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
   const [expenses, setExpenses] = useState([]);
   const [categories, setCategories] = useState([]);
   const [members, setMembers] = useState([]);
-  const [sourceFile, setSourceFile] = useState('202608.csv'); // TODO: 初期値は仮置き。実際にはAPIから取得する
+  const [sourceFile, setSourceFile] = useState('202609.csv'); // TODO: 初期値は仮置き。実際にはAPIから取得する
   const [loading, setLoading] = useState(true);
 
   // コントロール用ステート

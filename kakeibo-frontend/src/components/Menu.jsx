@@ -1,29 +1,29 @@
 import React, { useState } from 'react';
 
-// 1. props に onNavigate と activeView を追加
+// 1. props に onNavigate と activeView を受け取る
 const Menu = ({ onLogout, username, onNavigate, activeView }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
-  // ユーザー名の取得（propsが空ならlocalStorage、それでも無ければ'Guest'）
+  // ユーザー名の取得（propsが空ならlocalStorage、無ければ'Guest'）
   const currentUser = username || localStorage.getItem('username') || 'Guest';
 
-  // メニューアイテムリスト
+  // メニューアイテムリスト (アイコンと識別ID/値を追加)
   const navItems = [
-    { label: 'DashBoard' },
-    { label: 'CSV Import' },
-    { label: 'Table' },
-    { label: 'EDA' },
-    { label: 'Zones' },
-    { label: 'Prediction' },
+    { label: 'DashBoard', id: 'DashBoard' },
+    { label: 'CSV Import', id: 'Import' },
+    { label: 'Table', id: 'Table' },
+    { label: 'EDA', id: 'EDA' },
+    { label: 'Zones', id: 'Zones' },
+    { label: 'Prediction', id: 'Prediction' },
   ];
 
   // メニュー項目が押された時の処理
-  const handleNavClick = (label) => {
+  const handleNavClick = (targetId) => {
     toggleMenu();
     if (onNavigate) {
-      onNavigate(label); // App.jsx の currentView を更新
+      onNavigate(targetId); // App.jsx の currentView 状態を更新
     }
   };
 
@@ -62,20 +62,25 @@ const Menu = ({ onLogout, username, onNavigate, activeView }) => {
 
         {/* ナビゲーションリンク */}
         <nav style={styles.navGroup}>
-          {navItems.map((item, index) => (
-            <button
-              key={index}
-              style={{
-                ...styles.navItem,
-                // 現在アクティブな画面のスタイルを少し明るくハイライト
-                backgroundColor: activeView === item.label ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
-                color: activeView === item.label ? '#38bdf8' : '#cbd5e1',
-              }}
-              onClick={() => handleNavClick(item.label)} // 変更
-            >
-              <span>{item.label}</span>
-            </button>
-          ))}
+          {navItems.map((item) => {
+            const isActive = activeView === item.id || activeView === item.label;
+            return (
+              <button
+                key={item.id}
+                style={{
+                  ...styles.navItem,
+                  // 現在アクティブな画面のスタイルを少し明るくハイライト
+                  backgroundColor: isActive ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                  color: isActive ? '#38bdf8' : '#cbd5e1',
+                  borderLeft: isActive ? '3px solid #38bdf8' : '3px solid transparent',
+                  boxShadow: isActive ? 'inset 0 0 15px rgba(56, 189, 248, 0.08)' : 'none',
+                }}
+                onClick={() => handleNavClick(item.id)}
+              >
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
 
           {/* Django Adminリンク */}
           <a
