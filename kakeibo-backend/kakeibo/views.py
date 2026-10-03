@@ -383,18 +383,16 @@ class ExpenseImportView(APIView):
                     )
                 )
 
-                # 現在のテーブル内の EXPENSES_ID の最大値を取得
-                max_id = Expenses.objects.aggregate(Max('expenses_id'))['expenses_id__max'] or 0
+            # 現在の最大IDを取得
+            max_id_dict = Expenses.objects.aggregate(Max('expenses_id'))
+            current_max = max_id_dict.get('expenses_id__max') or 0
 
-                # logger.info("Current Max EXPENSES_ID: %s", max_id)
-                
-                # 開始IDを決定 (現在の最大値+1)
-                next_id = max(max_id + 1)
+            # 開始IDを決定 (現在値の最大+1)
+            start_id = current_max + 1
 
-            # インポート対象データに1件ずつ順にIDを割り当てる
-            for item in new_expenses:
-                item.expenses_id = next_id
-                next_id += 1
+            # リスト内の各オブジェクトにIDを割り当てる (new_expenses リストをループ)
+            for index, item in enumerate(new_expenses):
+                item.expenses_id = start_id + index
 
             # IDがセットされた状態で一括保存
             Expenses.objects.bulk_create(new_expenses)
