@@ -29,3 +29,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# その他のコミット対象外
+documents/https証明書管理メモ.md
