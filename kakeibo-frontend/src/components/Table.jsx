@@ -474,7 +474,16 @@ const Table = ({ onLogout, username, onNavigate }) => {
             ...styles.tableWrapper,
             maxHeight: isEditMode ? '515px' : '650px',
           }}>
-            <table style={styles.table}>
+            <style>
+              {/* 行を交互に色付けしてカーソルONのハイライトするためのCSSを追加 */}
+              {`
+                .expense-table tbody tr {transition: background-color 0.15s ease;}
+                .expense-table tbody tr:nth-child(odd) td {background-color: rgba(15, 23, 42, 0.25);}
+                .expense-table tbody tr:nth-child(even) td {background-color: rgba(51, 65, 85, 0.25);}
+                .expense-table tbody tr:hover td {background-color: rgba(56, 189, 248, 0.15);}
+              `}
+            </style>
+            <table className="expense-table" style={styles.table}>
               <thead>
                 <tr>
                   {isEditMode && (
