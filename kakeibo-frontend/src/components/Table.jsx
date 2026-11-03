@@ -157,6 +157,7 @@ const Table = ({ onLogout, username, onNavigate }) => {
   };
 
   // --- 一括操作ボタンのハンドラー ---
+  // カテゴリ一括適用
   const handleApplyBulkCategory = async () => {
     if (!bulkCategory) return showMessage('カテゴリを選択してください', 'error');
     if (selectedIds.length === 0) return showMessage('対象の行にチェックを入れてください', 'error');
@@ -164,10 +165,15 @@ const Table = ({ onLogout, username, onNavigate }) => {
     setExpenses((prev) =>
       prev.map((item) => (selectedIds.includes(item.expenses_id) ? { ...item, category: bulkCategory } : item))
     );
+
+    // 選択されたチェックボックスをクリア
+    setSelectedIds([]);
+
     await bulkUpdateOnServer(selectedIds, { category: bulkCategory });
     showMessage(`${selectedIds.length}件のカテゴリを一括更新しました`, 'success');
   };
 
+  // メンバー一括適用
   const handleApplyBulkMember = async () => {
     if (!bulkMember) return showMessage('メンバーを選択してください', 'error');
     if (selectedIds.length === 0) return showMessage('対象の行にチェックを入れてください', 'error');
@@ -175,6 +181,10 @@ const Table = ({ onLogout, username, onNavigate }) => {
     setExpenses((prev) =>
       prev.map((item) => (selectedIds.includes(item.expenses_id) ? { ...item, member: bulkMember } : item))
     );
+
+    // 選択されたチェックボックスをクリア
+    setSelectedIds([]); 
+
     await bulkUpdateOnServer(selectedIds, { member: bulkMember });
     showMessage(`${selectedIds.length}件のメンバーを一括更新しました`, 'success');
   };
